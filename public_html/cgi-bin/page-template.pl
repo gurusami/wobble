@@ -1,8 +1,4 @@
 #!/usr/bin/perl
-#
-# Time-stamp: <2020-09-06 22:18:32 annamalai>
-# Author:  Annamalai Gurusami <annamalai.gurusami@gmail.com>
-#
 
 use strict;
 use warnings;

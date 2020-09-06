@@ -13,6 +13,7 @@ my %TABLE = (
     answer_1 => 'answer_1',
     question => 'question',
     qid_ref  => 'ry_qid_ref',
+    tests    => 'ry_tests',
     );
 
 sub last_insert_id {
@@ -401,5 +402,29 @@ sub is_session_valid {
 }
 
 # END - TABLE: ry_sessions
+
+# -------------------------------------------------------------------------
+# BEGIN - TABLE: ry_tests
+# -------------------------------------------------------------------------
+
+sub insert_new_test {
+    my $dbh = shift;
+    my $tst_type = shift;
+    my $tst_title = shift;
+    my $tst_owner = shift;
+
+    my $query = "INSERT INTO $TABLE{'tests'} (tst_type, tst_title, tst_owner) VALUES (?, ?, ?)";
+    my $stmt = $dbh->prepare($query) or return undef;
+    $stmt->execute($tst_type, $tst_title, $tst_owner) or return undef;
+    $stmt->finish();
+
+    return last_insert_id($dbh);
+}
+
+# -------------------------------------------------------------------------
+# END - TABLE: ry_tests
+# -------------------------------------------------------------------------
+
+
 
 1;

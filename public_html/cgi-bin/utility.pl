@@ -8,6 +8,8 @@ use warnings;
 use DBI;
 use URI::Encode qw(uri_encode uri_decode);
 
+require './model.pl';
+
 sub content_type {
     print qq[Content-type:text/html\n\n];
 }
