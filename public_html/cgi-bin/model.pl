@@ -29,6 +29,7 @@ sub last_insert_id {
 
 # -------------------------------------------------------------------------
 # BEGIN TABLE 'question'
+# -------------------------------------------------------------------------
 
 sub insert_question {
     my $dbh = shift;
@@ -421,10 +422,139 @@ sub insert_new_test {
     return last_insert_id($dbh);
 }
 
+sub increment_tst_version {
+    my $dbh = shift;
+    my $tst_id = shift;
+    
+    my $query = "UPDATE ry_tests SET tst_version = tst_version + 1 WHERE tst_id = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tst_id) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub get_tst_version {
+    my $dbh = shift;
+    my $tst_id = shift;
+    
+    my $query = "SELECT tst_version FROM ry_tests WHERE tst_id = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tst_id) or die $dbh->errstr();
+    my ($tst_version) = $stmt->fetchrow();
+    $stmt->finish();
+
+    return $tst_version;
+}
+
 # -------------------------------------------------------------------------
 # END - TABLE: ry_tests
 # -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# BEGIN - TABLE: ry_test_questions
+# -------------------------------------------------------------------------
 
+sub insert_one_test_question {
+    my $dbh = shift;
+    my $tst_id = shift;
+    my $tst_version = shift;
+    my $qid = shift;
+
+    my $query = "INSERT INTO ry_test_questions (tq_tst_id, tq_tst_version, tq_qid) VALUES (?, ?, ?)";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tst_id, $tst_version, $qid) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub remove_one_test_question {
+    my $dbh = shift;
+    my $tst_id = shift;
+    my $tst_version = shift;
+    my $qid = shift;
+
+    my $query = "INSERT INTO ry_test_questions (tq_tst_id, tq_tst_version, tq_qid, tq_added) VALUES (?, ?, ?, false)";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tst_id, $tst_version, $qid) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+
+sub add_question_to_test {
+    my $dbh = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+
+    $dbh->begin_work();
+    increment_tst_version($dbh, $tst_id);
+    my $tst_version = get_tst_version($dbh, $tst_id);
+    insert_one_test_question($dbh, $tst_id, $tst_version, $qid);
+    $dbh->commit();    
+}
+
+sub remove_question_from_test {
+    my $dbh = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+
+    $dbh->begin_work();
+    increment_tst_version($dbh, $tst_id);
+    my $tst_version = get_tst_version($dbh, $tst_id);
+    remove_one_test_question($dbh, $tst_id, $tst_version, $qid);
+    $dbh->commit();    
+}
+
+
+sub get_questions {
+    my $dbh = shift;
+    my $tst_id = shift;
+    my $tst_version = shift;
+    
+    my %QID_LIST;
+    my $query = "SELECT tq_qid, tq_added FROM ry_test_questions WHERE tq_tst_id = ? AND tq_tst_version <= ? ORDER BY tq_tst_version";
+
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tst_id, $tst_version) or die $dbh->errstr();
+
+    while (my ($qid, $added) = $stmt->fetchrow()) {
+	if ($added) {
+	    if (defined $QID_LIST{$qid}) {
+		$QID_LIST{$qid}++;
+	    } else {
+		$QID_LIST{$qid} = 1;
+	    }
+	} else {
+	    $QID_LIST{$qid} = 0;
+	}
+    }
+
+    $stmt->finish();
+
+    return \%QID_LIST;
+}
+
+sub get_qid_in_tst {
+    my $dbh = shift;
+    my $tst_id = shift;
+    my $tst_version = shift;
+
+    my $qlist_href = get_questions($dbh, $tst_id, $tst_version);
+    my %QID_LIST = %{$qlist_href};
+
+    my @qid_in_tst;
+    foreach my $qid (keys %QID_LIST) {
+	if ($QID_LIST{$qid} == 0) {
+	    next;
+	} elsif ($QID_LIST{$qid} == 1) {
+	    push @qid_in_tst, $qid;
+	} else {
+	    die "Question $qid occurs more than once in test $tst_id";
+	}
+    }
+
+    return \@qid_in_tst;
+}
+
+# -------------------------------------------------------------------------
+# BEGIN - TABLE: ry_test_questions
+# -------------------------------------------------------------------------
 
 
 1;

@@ -60,7 +60,9 @@ sub show_existing_tests {
     print q{<table>};
     print q{<tr> <th> Test ID </th> <th> Test Type </th> <th> Title </th> <th> Version </th> <th> Owner </th> <th> Created On </th> </tr>};
     while (my ($tst_id, $tst_type, $tst_owner, $tst_created_on, $tst_version, $tst_title) = $stmt->fetchrow()) {
-	print qq{<tr> <td> $tst_id </td> <td> $tst_type </td> <td> $tst_title </td> <td> $tst_version </td> <td> $tst_owner </td> <td> $tst_created_on </td> </tr>};
+	print qq{<tr>} . "\n";
+	print qq{<td> <a href="maketest.pl?sid=$SESSION{'sid'}&tst_id=$tst_id"> $tst_id</a> </td>} . "\n";
+	print qq{<td> $tst_type </td> <td> $tst_title </td> <td> $tst_version </td> <td> $tst_owner </td> <td> $tst_created_on </td> </tr>};
     }
     print q{</table>};
 
