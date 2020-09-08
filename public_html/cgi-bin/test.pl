@@ -14,6 +14,9 @@ sub MAIN {
 
     print q{<body>};
     print q{<h1> ____ </h2>};
+
+    print_hash(\%ENV);
+    
     print q{</body>};
     
     print q{</html>};

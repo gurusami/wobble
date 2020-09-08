@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Time-stamp: <2020-09-08 13:26:10 annamalai>
+# Time-stamp: <2020-09-08 21:45:02 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
 #
@@ -572,11 +572,32 @@ sub get_qid_in_tst {
 	}
     }
 
-    return \@qid_in_tst;
+    my @sorted_qids = sort @qid_in_tst;
+    return \@sorted_qids;
 }
 
 # -------------------------------------------------------------------------
-# BEGIN - TABLE: ry_test_questions
+# END - TABLE: ry_test_questions
+# -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# BEGIN - TABLE: ry_script_acl
+# -------------------------------------------------------------------------
+
+sub check_acl {
+    my $dbh = shift;
+    my $userid = shift;
+    my $script = shift;
+
+    my $query = "SELECT COUNT(*) FROM ry_script_acl WHERE acl_userid = ? AND acl_script = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $script) or die $dbh->errstr();
+    my $is_allowed = $stmt->fetchrow();
+    $stmt->finish();
+    return $is_allowed;
+}
+
+# -------------------------------------------------------------------------
+# END - TABLE: ry_script_acl
 # -------------------------------------------------------------------------
 
 

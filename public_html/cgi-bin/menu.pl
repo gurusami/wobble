@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Time-stamp: <2020-09-06 22:17:50 annamalai>
+# Time-stamp: <2020-09-08 21:26:22 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 #
 
@@ -50,6 +50,7 @@ sub MAIN {
     print qq[<li> <a href="biblio.pl?sid=$SESSION{'sid'}">Add a reference or a bibliographic entry</a> </li>];
     print qq[<li> <a href="create-test.pl?sid=$SESSION{'sid'}">Create a new test</a> </li>];
     print qq[<li> <a href="maketest.pl?sid=$SESSION{'sid'}">Prepare a test (add/remove questions)</a> </li>];
+    print qq[<li> <a href="test-schedule.pl?sid=$SESSION{'sid'}">Schedule a test </a> </li>];
 
     print "</ul>";
     print "</body>";
