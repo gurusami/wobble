@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Time-stamp: <2020-09-08 13:58:35 annamalai>
+# Time-stamp: <2020-09-10 06:30:38 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
 #
@@ -152,21 +152,15 @@ sub display_choice {
 
 }
 
-sub menu {
-    my $sid = shift;
-    print qq[<a href="menu.pl?sid=$sid">Main Menu</a>];
-    print qq[<a href="addmcq.pl?sid=$sid">Add Another Question</a>];
-    print q[<hr>];
-}
-
 sub DISPLAY {
     print "<html>";
     print "<head>";
     print "<title>Add Multiple Choice Question</title>";
+    link_css();
     print "</head>";
     print "<body>";
 
-    menu($SESSION{'sid'});
+    top_menu($SESSION{'sid'});
 
     print "<h1>Add an MCQ (Question of Type 1)</h1>";
     

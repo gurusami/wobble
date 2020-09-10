@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Time-stamp: <2020-09-09 13:41:07 annamalai>
+# Time-stamp: <2020-09-10 06:25:44 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
 #
@@ -48,6 +48,7 @@ sub COLLECT {
 }
 
 sub PROCESS {
+    remove_sessions($DBH, $SESSION{'userid'});
 }
 
 sub DISPLAY {
@@ -55,8 +56,13 @@ sub DISPLAY {
     print "<head>";
     print "<title> Create a New Test </title>";
     print "</head>" . "\n";
-    print "<body>";
-    top_menu($SESSION{'sid'});
+
+    my $url = login_url();
+    
+    print qq{
+    <body> <p> You have been successfully logged out.
+	Go back to <a href="$url">login</a> page </p>};
+    
     print "</body>";
     print "</html>";
 
@@ -66,11 +72,10 @@ sub MAIN {
     CTOR();
     COLLECT();
     content_type();
-    
+
     my $s_ref = CHECK_SESSION($DBH, $FORM{'sid'});
     %SESSION = %{$s_ref};
-
-    CHECK_AUTH($DBH, $SESSION{'sid'}, $ENV{'SCRIPT_NAME'}, $SESSION{'userid'});
+    
     PROCESS();
     DISPLAY();
     

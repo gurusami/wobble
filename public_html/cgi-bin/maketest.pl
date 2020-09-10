@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Time-stamp: <2020-09-08 13:59:29 annamalai>
+# Time-stamp: <2020-09-10 06:34:02 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
 #
@@ -52,23 +52,23 @@ sub COLLECT {
 }
 
 sub show_test_details {
-    my $query = q{SELECT tst_id, tst_version, tst_type, tst_title, tst_owner, tst_created_on FROM ry_tests WHERE tst_id = ?};
+    my $query = q{SELECT tst_id, tst_qst_count, tst_type, tst_title, tst_owner, tst_created_on FROM ry_tests WHERE tst_id = ?};
     my $stmt = $DBH->prepare($query) or die $DBH->errstr();
     $stmt->execute($FORM{'tst_id'}) or die $DBH->errstr();
-    my ($tst_id, $tst_version, $tst_type, $tst_title, $tst_owner, $tst_created_on) = $stmt->fetchrow();
+    my ($tst_id, $tst_qst_count, $tst_type, $tst_title, $tst_owner, $tst_created_on) = $stmt->fetchrow();
 
     print q{<h2> Test Information </h2>};
     print q{<table>} . "\n";
-    print q{<tr> <th> Test ID </th> <th> Latest Version </th> <th> Type </th> <th> Title </th> <th> Owner </th> <th> Created On </th> </tr>} . "\n";
+    print q{<tr> <th> Test ID </th> <th> Question Count </th> <th> Type </th> <th> Title </th> <th> Owner </th> <th> Created On </th> </tr>} . "\n";
     print q{<tr>};
-    print qq{<td> $tst_id </td> <td> $tst_version </td> <td> $tst_type </td> <td> $tst_title </td> <td> $tst_owner </td> <td> $tst_created_on </td>} . "\n";
+    print qq{<td> $tst_id </td> <td> $tst_qst_count </td> <td> $tst_type </td>}
+    . qq{<td> $tst_title </td> <td> $tst_owner </td> <td> $tst_created_on </td>} . "\n";
     print q{</tr>};
     print q{</table>} . "\n";
 }
 
 sub show_questions_in_test {
-    $FORM{'tst_version'} = get_tst_version($DBH, $FORM{'tst_id'});
-    my $qlist_aref = get_qid_in_tst($DBH, $FORM{'tst_id'}, $FORM{'tst_version'});
+    my $qlist_aref = get_qid_in_tst($DBH, $FORM{'tst_id'});
     my @qlist = @{$qlist_aref};
 
     my $N = 1 + $#qlist;
@@ -164,6 +164,7 @@ sub DISPLAY {
     print "<html>";
     print "<head>";
     print "<title> Preparing Test With Test ID: $FORM{'tst_id'} </title>";
+    link_css();
     print "</head>" . "\n";
 
     print "<body>";

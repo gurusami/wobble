@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Time-stamp: <2020-09-08 21:26:22 annamalai>
+# Time-stamp: <2020-09-10 06:36:25 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 #
 
@@ -28,6 +28,16 @@ sub COLLECT {
     %FORM = %{$form_href};
 }
 
+sub IF_AUTH_LINK {
+    my $script = shift;
+    my $text = shift;
+
+    if (check_acl($DBH, $SESSION{'userid'}, $script)) {
+	print qq[<li> <a href="$script?sid=$SESSION{'sid'}"> $text </a> </li>];
+    }
+    
+}
+
 sub MAIN {
     CTOR();
     COLLECT();
@@ -38,20 +48,24 @@ sub MAIN {
     print "<!doctype html>";
     print "<html>";
     print "<head>";
-    print "<title> Manage References </title>";
+    print "<title> Main Menu </title>";
+    link_css();
     print "</head>";
 
     print "<body>";
 
+    top_menu($FORM{'sid'});
+    
     print "<ul>";
-    print qq[<li> <a href="browse.pl?sid=$SESSION{'sid'}">Browse Questions</a> </li>];
-    print qq[<li> <a href="addmcq.pl?sid=$SESSION{'sid'}">Add a Type 1 Question</a> </li>];
-    print qq[<li> <a href="tinker.pl?sid=$SESSION{'sid'}">Tinker a Question</a> </li>];
-    print qq[<li> <a href="biblio.pl?sid=$SESSION{'sid'}">Add a reference or a bibliographic entry</a> </li>];
-    print qq[<li> <a href="create-test.pl?sid=$SESSION{'sid'}">Create a new test</a> </li>];
-    print qq[<li> <a href="maketest.pl?sid=$SESSION{'sid'}">Prepare a test (add/remove questions)</a> </li>];
-    print qq[<li> <a href="test-schedule.pl?sid=$SESSION{'sid'}">Schedule a test </a> </li>];
-
+    IF_AUTH_LINK("browse.pl", "Browse Questions");
+    IF_AUTH_LINK("addmcq.pl", "Add Type 1 Question (MCQ)");
+    IF_AUTH_LINK("tinker.pl", "Tinker a Question");
+    IF_AUTH_LINK("biblio.pl", "Register a Reference/Bibliography");
+    IF_AUTH_LINK("create-test.pl", "Create a New Test");
+    IF_AUTH_LINK("maketest.pl", "Prepare a Test (Add/Remove Questions)");
+    IF_AUTH_LINK("test-schedule.pl", "Schedule a Test");
+    IF_AUTH_LINK("list-test-sch.pl", "List ALL Scheduled Tests");
+    IF_AUTH_LINK("list-mytests.pl", "List My Tests");
     print "</ul>";
     print "</body>";
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Time-stamp: <2020-09-08 22:01:44 annamalai>
+# Time-stamp: <2020-09-10 06:33:16 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
 #
@@ -49,61 +49,121 @@ sub COLLECT {
 }
 
 sub PROCESS {
+    if (defined $FORM{'confirm'}) {
+	my $userid = $FORM{'selected_username'};
+	my $tst_id = $FORM{'selected_tst_id'};
+
+	$DBH->begin_work();
+	my $att_id = max_attempt_get($DBH, $userid, $tst_id);
+	$att_id++;
+	$FORM{'att_id'} = $att_id;
+	insert_test_schedule($DBH, $userid, $tst_id, $att_id,
+			     $FORM{'from_date'}, $FORM{'to_date'});
+	prepare_test_attempt($DBH, $userid, $tst_id, $att_id);
+	$DBH->commit();
+    }
 }
 
 sub show_existing_tests {
-    my $query = "SELECT tst_id, tst_type, tst_owner, tst_created_on, tst_version, tst_title FROM ry_tests ORDER BY tst_id DESC";
+    my $query = "SELECT tst_id, tst_type, tst_owner, tst_created_on, tst_qst_count, tst_title FROM ry_tests ORDER BY tst_id DESC";
 
     my $stmt = $DBH->prepare($query);
     $stmt->execute();
 
     print q{<table>};
-    print q{<tr> <th> Test ID </th> <th> Test Type </th> <th> Title </th> <th> Version </th> <th> Owner </th> <th> Created On </th> </tr>};
-    while (my ($tst_id, $tst_type, $tst_owner, $tst_created_on, $tst_version, $tst_title) = $stmt->fetchrow()) {
+    print q{<tr> <th> Select </th> <th> Test ID </th> <th> Test Type </th>} .
+	q{<th> Title </th> <th> Question Count </th> <th> Owner </th>} .
+	q{<th> Created On </th> </tr>};
+    
+    while (my ($tst_id, $tst_type, $tst_owner, $tst_created_on, $tst_qst_count,
+	       $tst_title) = $stmt->fetchrow()) {
 	print qq{<tr>} . "\n";
+	print qq{<td> <input type="radio" name="selected_tst_id" value="$tst_id" /> </td>} . "\n";
 	print qq{<td> $tst_id </td>} . "\n";
-	print qq{<td> $tst_type </td> <td> $tst_title </td> <td> $tst_version </td> <td> $tst_owner </td> <td> $tst_created_on </td> </tr>};
+	print qq{<td> $tst_type </td> <td> $tst_title </td> <td> $tst_qst_count </td> <td> $tst_owner </td> <td> $tst_created_on </td> </tr>};
     }
     print q{</table>};
 
+    print q{<input type="submit" name="sel_tst" value="Select Test" />};
     $stmt->finish();
 
+}
+
+sub show_users {
+    my $query = "SELECT userid, username FROM ry_users ORDER BY username";
+
+    my $stmt = $DBH->prepare($query);
+    $stmt->execute();
+
+    print q{<table>};
+    print q{<tr> <th> Select </th> <th> User Name </th> </tr>};
+    
+    while (my ($userid, $uname) = $stmt->fetchrow()) {
+	print qq{<tr>} . "\n";
+	print qq{<td> <input type="radio" name="selected_username" value="$userid" /> </td>} . "\n";
+	print qq{<td> $uname </td>} . "\n";
+    }
+    print q{</table>};
+
+    print q{<input type="submit" name="sel_user" value="Select User" />};
+    $stmt->finish();
+
+}
+
+sub show_dates {
+    print q{<table>};
+    print q{<tr> <th> From Date </th> <th> To Date </th> </tr>};
+    print q{<tr>} . 
+	qq{<td> <input type="date" name="from_date" value="$FORM{'from_date'}" /> </td>} .
+	qq{<td> <input type="date" name="to_date" value="$FORM{'to_date'}" /> </td>} .
+	q{</tr>} . "\n"
+	. q{</table>} . "\n"
+	. q{<input type="submit" name="sel_dates" value="Select Dates" />};
 }
 
 sub DISPLAY {
     print "<html>";
     print "<head>";
     print "<title> Create a New Test </title>";
+    link_css();
     print "</head>" . "\n";
     print "<body>";
     top_menu($SESSION{'sid'});
-    show_existing_tests();
-    print "</body>";
-    print "</html>";
-}
 
-sub AUTH_FAILED {
-    print "<html>";
-    print "<head>";
-    print "<title> Create a New Test </title>";
-    print "</head>" . "\n";
-    print "<body>";
-    top_menu($SESSION{'sid'});
-    print qq{<p> You are not authorized. </p>};
-    print "</body>";
-    print "</html>";
+    print qq{<form action="test-schedule.pl?sid=$SESSION{'sid'}" method="post">};
+    print qq{<input type="hidden" name="sid" value="$SESSION{'sid'}" />};
 
-    exit(0);
-}
+    if (! defined $FORM{'selected_tst_id'} ) {
+	show_existing_tests();
+    } elsif (! defined $FORM{'selected_username'} ) {
+	# Test ID has been selected already.  Now select user. 
+	print qq{<input type="hidden" name="selected_tst_id" value="$FORM{'selected_tst_id'}" />};
+	show_users();
+    } elsif (! (defined $FORM{'from_date'} && defined $FORM{'to_date'}) ) {
+	print qq{<input type="hidden" name="selected_tst_id" value="$FORM{'selected_tst_id'}" />};
+	print qq{<input type="hidden" name="selected_username" value="$FORM{'selected_username'}" />};
 
-
-sub CHECK_AUTH {
-    my $script =  basename($ENV{'SCRIPT_NAME'});
-    my $is_allowed = check_acl($DBH, $SESSION{'userid'}, $script);
-
-    if ($is_allowed == 0) {
-	AUTH_FAILED();
+	show_dates();
+    } elsif (! defined $FORM{'confirm'}) {
+	print qq{<input type="hidden" name="selected_tst_id" value="$FORM{'selected_tst_id'}" />};
+	print qq{<input type="hidden" name="selected_username" value="$FORM{'selected_username'}" />};
+	print qq{<input type="hidden" name="from_date" value="$FORM{'from_date'}" />};
+	print qq{<input type="hidden" name="to_date" value="$FORM{'to_date'}" />} .
+	    q{<input type="submit" name="confirm" value="Confirm" />};
+    } else {
+	print q{<h2> Test Schedule Completed </h2>} . "\n"
+	    . q{<table>} . "\n"
+	    . q{<tr> <th> Test Property </th> <th> Value </th> </tr>} . "\n"
+	    . qq{<tr> <td> Test ID </td> <td> $FORM{'selected_tst_id'} </td> </tr>} . "\n"
+	    . qq{<tr> <td> Attempts </td> <td> $FORM{'att_id'} </td> </tr> } . "\n"
+	    . qq{<tr> <td> User </td> <td> $FORM{'selected_username'} </td> </tr> } . "\n"
+	    . qq{<tr> <td> From Date </td> <td> $FORM{'from_date'} </td> </tr> } . "\n"
+	    . qq{<tr> <td> To Date </td> <td> $FORM{'to_date'} </td> </tr> } . "\n"
+	    . q{</table>};
     }
+    print q{</form>};
+    print "</body>";
+    print "</html>";
 }
 
 sub MAIN {
@@ -113,8 +173,8 @@ sub MAIN {
     
     my $s_ref = CHECK_SESSION($DBH, $FORM{'sid'});
     %SESSION = %{$s_ref};
-    CHECK_AUTH();
-    
+
+    CHECK_AUTH($DBH, $SESSION{'sid'}, $ENV{'SCRIPT_NAME'}, $SESSION{'userid'});    
     PROCESS();
     DISPLAY();
     

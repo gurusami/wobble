@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Time-stamp: <2020-09-03 19:39:11 annamalai>
+# Time-stamp: <2020-09-10 06:12:45 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 #
 
@@ -18,6 +18,7 @@ my $dbh;
 
 # MySQL function sha2(?, 256) is being used to store password.
 # My temp password is 'asterix'.
+# Mythili password is 'W0rkNts3'
 
 sub display_login {
     print q{

@@ -124,6 +124,7 @@ sub MAIN {
     print "<html>";
     print "<head>";
     print "<title> Manage References </title>";
+    link_css();
     print "</head>";
 
     print "<body>";

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Time-stamp: <2020-09-09 13:41:07 annamalai>
+# Time-stamp: <2020-09-10 06:32:17 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
 #
@@ -23,7 +23,9 @@
 # <https://www.gnu.org/licenses/>.
 #
 ###########################################################################
-
+#
+# List ALL the scheduled tests.
+#
 use strict;
 use warnings;
 
@@ -50,16 +52,61 @@ sub COLLECT {
 sub PROCESS {
 }
 
+sub list_scheduled_tests {
+    my $userid = shift;
+    my $query =  q{SELECT sch_userid, sch_tst_id, sch_aid, sch_from, sch_to,
+		       sch_submitted, sch_created_on
+		       FROM ry_test_schedule WHERE sch_userid = ? ORDER BY sch_userid};
+
+    my $stmt = $DBH->prepare($query) or die $DBH->errstr();
+    $stmt->execute($userid) or die $DBH->errstr();
+
+    print q{
+    <table>
+	<tr> <th> User ID </th>
+	    <th> Test ID </th>
+	    <th> Attempt Number </th>
+	    <th> From Date </th>
+	    <th> To Date </th>
+	    <th> Submitted On </th>
+	    <th> Schedule Created On </th>
+	    </tr>
+	};
+
+
+    while (my ($sch_userid, $sch_tst_id, $sch_aid, $sch_from, $sch_to, 
+	       $sch_submitted, $sch_created_on) = $stmt->fetchrow()) {
+
+	my $qs=qq{taketest.pl?sid=$SESSION{'sid'}&tst_id=$sch_tst_id&att_id=$sch_aid};
+	
+	print qq{
+	<tr> <td> $sch_userid </td>
+	    <td> <a href="$qs">$sch_tst_id</a> </td>
+	    <td> $sch_aid </td>
+	    <td> $sch_from </td>
+	    <td> $sch_to </td>
+	    <td> $sch_submitted </td>
+	    <td> $sch_created_on </td>
+	    </tr>
+	};
+    }
+
+    print q{</table>};
+    
+}
+
 sub DISPLAY {
     print "<html>";
     print "<head>";
-    print "<title> Create a New Test </title>";
+    print "<title> List My Tests </title>";
+    link_css();
     print "</head>" . "\n";
     print "<body>";
     top_menu($SESSION{'sid'});
+
+    list_scheduled_tests($SESSION{'userid'});
     print "</body>";
     print "</html>";
-
 }
 
 sub MAIN {

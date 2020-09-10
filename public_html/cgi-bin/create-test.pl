@@ -50,7 +50,7 @@ sub select_tst_type {
 }
 
 sub show_existing_tests {
-    my $query = "SELECT tst_id, tst_type, tst_owner, tst_created_on, tst_version, tst_title FROM ry_tests ORDER BY tst_id DESC";
+    my $query = "SELECT tst_id, tst_type, tst_owner, tst_created_on, tst_qst_count, tst_title FROM ry_tests ORDER BY tst_id DESC";
 
     my $stmt = $DBH->prepare($query);
     $stmt->execute();
@@ -58,11 +58,11 @@ sub show_existing_tests {
     print q{<hr>};
     
     print q{<table>};
-    print q{<tr> <th> Test ID </th> <th> Test Type </th> <th> Title </th> <th> Version </th> <th> Owner </th> <th> Created On </th> </tr>};
-    while (my ($tst_id, $tst_type, $tst_owner, $tst_created_on, $tst_version, $tst_title) = $stmt->fetchrow()) {
+    print q{<tr> <th> Test ID </th> <th> Test Type </th> <th> Title </th> <th> Number of Questions </th> <th> Owner </th> <th> Created On </th> </tr>};
+    while (my ($tst_id, $tst_type, $tst_owner, $tst_created_on, $tst_qst_count, $tst_title) = $stmt->fetchrow()) {
 	print qq{<tr>} . "\n";
 	print qq{<td> <a href="maketest.pl?sid=$SESSION{'sid'}&tst_id=$tst_id"> $tst_id</a> </td>} . "\n";
-	print qq{<td> $tst_type </td> <td> $tst_title </td> <td> $tst_version </td> <td> $tst_owner </td> <td> $tst_created_on </td> </tr>};
+	print qq{<td> $tst_type </td> <td> $tst_title </td> <td> $tst_qst_count </td> <td> $tst_owner </td> <td> $tst_created_on </td> </tr>};
     }
     print q{</table>};
 
@@ -74,6 +74,7 @@ sub DISPLAY {
     print "<html>";
     print "<head>";
     print "<title> Create a New Test </title>";
+    link_css();
     print "</head>" . "\n";
 
     print "<body>";

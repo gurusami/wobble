@@ -24,6 +24,7 @@ sub DISPLAY {
     print "<html>";
     print "<head>";
     print "<title> Browse Questions </title>";
+    link_css();
     print "</head>";
 
     print "<body>";

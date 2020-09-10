@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Time-stamp: <2020-09-08 21:45:02 annamalai>
+# Time-stamp: <2020-09-10 02:02:50 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
 #
@@ -103,8 +103,8 @@ sub select_question {
     my $qid = shift;
 
     my $query = "SELECT qid, qparent, qlatex, qimage, qhtml, qtype FROM question WHERE qid = ?";
-    my $stmt = $dbh->prepare($query);
-    $stmt->execute($qid);
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($qid) or die $dbh->errstr();
     my $row = $stmt->fetchrow_hashref();
     $stmt->finish();
     return $row;
@@ -445,27 +445,41 @@ sub insert_new_test {
     return last_insert_id($dbh);
 }
 
-sub increment_tst_version {
+sub increment_tst_qst_count {
     my $dbh = shift;
     my $tst_id = shift;
     
-    my $query = "UPDATE ry_tests SET tst_version = tst_version + 1 WHERE tst_id = ?";
+    my $query = "UPDATE ry_tests SET tst_qst_count = tst_qst_count + 1 WHERE tst_id = ?";
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
     $stmt->execute($tst_id) or die $dbh->errstr();
     $stmt->finish();
 }
 
-sub get_tst_version {
+sub get_tst_qst_count {
     my $dbh = shift;
     my $tst_id = shift;
     
-    my $query = "SELECT tst_version FROM ry_tests WHERE tst_id = ?";
+    my $query = "SELECT tst_qst_count FROM ry_tests WHERE tst_id = ?";
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
     $stmt->execute($tst_id) or die $dbh->errstr();
-    my ($tst_version) = $stmt->fetchrow();
+    my ($tst_qcount) = $stmt->fetchrow();
     $stmt->finish();
 
-    return $tst_version;
+    return $tst_qcount;
+}
+
+sub get_tst_info {
+    my $dbh = shift;
+    my $tst_id = shift;
+
+    my $query = "SELECT * FROM ry_tests WHERE tst_id = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tst_id) or die $dbh->errstr();
+    my $row_href = $stmt->fetchrow_hashref();
+    $stmt->finish();
+
+    return $row_href;
+
 }
 
 # -------------------------------------------------------------------------
@@ -478,25 +492,16 @@ sub get_tst_version {
 sub insert_one_test_question {
     my $dbh = shift;
     my $tst_id = shift;
-    my $tst_version = shift;
+    my $tst_qseq = shift;
     my $qid = shift;
 
-    my $query = "INSERT INTO ry_test_questions (tq_tst_id, tq_tst_version, tq_qid) VALUES (?, ?, ?)";
+    my $query = "INSERT INTO ry_test_questions (tq_tst_id, tq_qid_seq, tq_qid) VALUES (?, ?, ?)";
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
-    $stmt->execute($tst_id, $tst_version, $qid) or die $dbh->errstr();
+    $stmt->execute($tst_id, $tst_qseq, $qid) or die $dbh->errstr();
     $stmt->finish();
 }
 
 sub remove_one_test_question {
-    my $dbh = shift;
-    my $tst_id = shift;
-    my $tst_version = shift;
-    my $qid = shift;
-
-    my $query = "INSERT INTO ry_test_questions (tq_tst_id, tq_tst_version, tq_qid, tq_added) VALUES (?, ?, ?, false)";
-    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
-    $stmt->execute($tst_id, $tst_version, $qid) or die $dbh->errstr();
-    $stmt->finish();
 }
 
 
@@ -506,74 +511,46 @@ sub add_question_to_test {
     my $qid = shift;
 
     $dbh->begin_work();
-    increment_tst_version($dbh, $tst_id);
-    my $tst_version = get_tst_version($dbh, $tst_id);
-    insert_one_test_question($dbh, $tst_id, $tst_version, $qid);
+    increment_tst_qst_count($dbh, $tst_id);
+    my $tst_qseq = get_tst_qst_count($dbh, $tst_id);
+    insert_one_test_question($dbh, $tst_id, $tst_qseq, $qid);
     $dbh->commit();    
 }
 
 sub remove_question_from_test {
-    my $dbh = shift;
-    my $tst_id = shift;
-    my $qid = shift;
-
-    $dbh->begin_work();
-    increment_tst_version($dbh, $tst_id);
-    my $tst_version = get_tst_version($dbh, $tst_id);
-    remove_one_test_question($dbh, $tst_id, $tst_version, $qid);
-    $dbh->commit();    
 }
 
-
-sub get_questions {
+sub get_nth_qid_in_tst {
     my $dbh = shift;
     my $tst_id = shift;
-    my $tst_version = shift;
+    my $seq = shift;
     
-    my %QID_LIST;
-    my $query = "SELECT tq_qid, tq_added FROM ry_test_questions WHERE tq_tst_id = ? AND tq_tst_version <= ? ORDER BY tq_tst_version";
-
+    my $query = "SELECT tq_qid FROM ry_test_questions WHERE tq_tst_id = ? AND tq_qid_seq = ?";
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
-    $stmt->execute($tst_id, $tst_version) or die $dbh->errstr();
-
-    while (my ($qid, $added) = $stmt->fetchrow()) {
-	if ($added) {
-	    if (defined $QID_LIST{$qid}) {
-		$QID_LIST{$qid}++;
-	    } else {
-		$QID_LIST{$qid} = 1;
-	    }
-	} else {
-	    $QID_LIST{$qid} = 0;
-	}
-    }
-
+    $stmt->execute($tst_id, $seq) or die $dbh->errstr();
+    my ($qid) = $stmt->fetchrow();
     $stmt->finish();
 
-    return \%QID_LIST;
+    return $qid;
+
 }
 
 sub get_qid_in_tst {
     my $dbh = shift;
     my $tst_id = shift;
-    my $tst_version = shift;
+    
+    my @qidlist;
+    
+    my $query = "SELECT tq_qid FROM ry_test_questions WHERE tq_tst_id = ? ORDER BY tq_qid_seq";
 
-    my $qlist_href = get_questions($dbh, $tst_id, $tst_version);
-    my %QID_LIST = %{$qlist_href};
-
-    my @qid_in_tst;
-    foreach my $qid (keys %QID_LIST) {
-	if ($QID_LIST{$qid} == 0) {
-	    next;
-	} elsif ($QID_LIST{$qid} == 1) {
-	    push @qid_in_tst, $qid;
-	} else {
-	    die "Question $qid occurs more than once in test $tst_id";
-	}
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tst_id) or die $dbh->errstr();
+    while ( my ($qid) = $stmt->fetchrow()) {
+	push @qidlist, $qid;
     }
+    $stmt->finish();
 
-    my @sorted_qids = sort @qid_in_tst;
-    return \@sorted_qids;
+    return \@qidlist;
 }
 
 # -------------------------------------------------------------------------
@@ -598,6 +575,149 @@ sub check_acl {
 
 # -------------------------------------------------------------------------
 # END - TABLE: ry_script_acl
+# -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# BEGIN - TABLE: ry_test_schedule
+# -------------------------------------------------------------------------
+
+sub max_attempt_get {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    
+    my $query = q{SELECT sch_userid, sch_tst_id, max(sch_aid) }
+    . q{FROM ry_test_schedule WHERE sch_userid = ? AND sch_tst_id = ? }
+    . q{GROUP BY sch_userid, sch_tst_id};
+    
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id) or die $dbh->errstr();
+
+    my ($u, $t, $max_attempt) = $stmt->fetchrow();
+    $stmt->finish();
+
+    if (! defined $max_attempt) {
+	$max_attempt = 0;
+    }
+    
+    return $max_attempt;
+}
+
+sub insert_test_schedule {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $aid = shift;
+    my $from_date = shift;
+    my $to_date = shift;
+    
+    my $query = q{INSERT INTO ry_test_schedule (sch_userid, sch_tst_id, sch_aid, sch_from, sch_to) VALUES (?, ?, ?, ?, ?)};
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $aid, $from_date, $to_date) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub mark_test_submitted {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $att_id = shift;
+    
+    my $query = q{UPDATE ry_test_schedule
+		      SET sch_submitted = TRUE,
+		      sch_submit_time = CURRENT_TIMESTAMP
+		      WHERE sch_userid = ?
+		      AND sch_tst_id = ?
+		      AND sch_aid = ?};
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $att_id) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub is_test_submitted {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $att_id = shift;
+
+    my $query = q{SELECT sch_submitted FROM ry_test_schedule
+		      WHERE sch_userid = ?
+		      AND sch_tst_id = ?
+		      AND sch_aid = ?};
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $att_id) or die $dbh->errstr();
+    my ($submitted) = $stmt->fetchrow();
+    $stmt->finish();
+
+    return $submitted;
+}
+
+# -------------------------------------------------------------------------
+# END - TABLE: ry_test_schedule
+# -------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------
+# BEGIN - TABLE: ry_test_attempts
+# -------------------------------------------------------------------------
+
+sub prepare_test_attempt {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $aid = shift;
+
+    my $query = q{INSERT INTO ry_test_attempts (att_userid, att_tst_id, att_aid, att_qid) VALUES (?, ?, ?, ?)};
+
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    my $qid_aref = get_qid_in_tst($dbh, $tst_id);
+    my @qids = @{$qid_aref};
+
+    foreach my $qid (@qids) {
+	$stmt->execute($userid, $tst_id, $aid, $qid) or die $dbh->errstr();
+    }
+
+    $stmt->finish();
+}
+
+sub give_answer {
+    my $dbh = shift;
+    my $choice = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $aid = shift;
+    my $qid = shift;
+    
+    my $query = q{UPDATE ry_test_attempts
+		      SET att_given = ?, att_when = current_timestamp
+		      WHERE att_userid = ? AND att_tst_id = ? 
+		      AND att_aid = ? AND att_qid = ?};
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($choice, $userid, $tst_id, $aid, $qid) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub fetch_user_given_answer {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $aid = shift;
+    my $qid = shift;
+
+    my $query = q{SELECT att_given FROM ry_test_attempts WHERE
+		      att_userid = ? AND
+		      att_tst_id = ? AND
+		      att_aid = ? AND
+		      att_qid = ?};
+    
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $aid, $qid) or die $dbh->errstr();
+    my ($given) = $stmt->fetchrow();
+    $stmt->finish();
+    return $given;
+}
+
+
+# -------------------------------------------------------------------------
+# END - TABLE: ry_test_attempts
 # -------------------------------------------------------------------------
 
 
