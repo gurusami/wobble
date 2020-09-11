@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Time-stamp: <2020-09-10 06:36:25 annamalai>
+# Time-stamp: <2020-09-11 13:41:26 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 #
 
@@ -66,6 +66,7 @@ sub MAIN {
     IF_AUTH_LINK("test-schedule.pl", "Schedule a Test");
     IF_AUTH_LINK("list-test-sch.pl", "List ALL Scheduled Tests");
     IF_AUTH_LINK("list-mytests.pl", "List My Tests");
+    IF_AUTH_LINK("test-reports.pl", "My Test Reports");
     print "</ul>";
     print "</body>";
 

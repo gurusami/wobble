@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Time-stamp: <2020-09-11 10:05:02 annamalai>
+# Time-stamp: <2020-09-11 13:42:12 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
 #
@@ -23,9 +23,7 @@
 # <https://www.gnu.org/licenses/>.
 #
 ###########################################################################
-#
-# List ALL the scheduled tests.
-#
+
 use strict;
 use warnings;
 
@@ -52,39 +50,40 @@ sub COLLECT {
 sub PROCESS {
 }
 
-sub list_scheduled_tests {
-    my $userid = shift;
-    my $query =  q{SELECT sch_userid, sch_tst_id, sch_from, sch_to,
-		       sch_submitted, sch_created_on
-		       FROM ry_test_schedule WHERE sch_userid = ? ORDER BY sch_userid};
+sub list_my_reports {
+
+    my $query =  q{SELECT rpt_tst_id, rpt_q_total, rpt_q_correct, rpt_q_wrong, rpt_q_skip, rpt_created
+		       FROM ry_test_reports WHERE rpt_userid = ? ORDER BY rpt_created DESC};
 
     my $stmt = $DBH->prepare($query) or die $DBH->errstr();
-    $stmt->execute($userid) or die $DBH->errstr();
+    $stmt->execute($SESSION{'userid'}) or die $DBH->errstr();
 
     print q{
-    <table>
-	<tr> <th> User ID </th>
-	    <th> Test ID </th>
-	    <th> From Date </th>
-	    <th> To Date </th>
-	    <th> Submitted On </th>
-	    <th> Schedule Created On </th>
-	    </tr>
-	};
+    <h2> My Test Reports </h2>
+	<table>
+	<tr> 
+	<th> Test ID </th>
+	<th> Total Questions </th>
+	<th> Correct </th>
+	<th> Wrong </th>
+	<th> Skipped </th>
+	<th> Date </th>
+	</tr>
+    };
 
 
-    while (my ($sch_userid, $sch_tst_id, $sch_from, $sch_to, 
-	       $sch_submitted, $sch_created_on) = $stmt->fetchrow()) {
+    while (my ($tst_id, $total, $correct, $wrong, $skip, $created) = $stmt->fetchrow()) {
 
-	my $qs=qq{taketest.pl?sid=$SESSION{'sid'}&tst_id=$sch_tst_id};
+	my $qs=qq{taketest.pl?sid=$SESSION{'sid'}&tst_id=$tst_id};
 	
 	print qq{
-	<tr> <td> $sch_userid </td>
-	    <td> <a href="$qs">$sch_tst_id</a> </td>
-	    <td> $sch_from </td>
-	    <td> $sch_to </td>
-	    <td> $sch_submitted </td>
-	    <td> $sch_created_on </td>
+	<tr> 
+	    <td> <a href="$qs">$tst_id</a> </td>
+	    <td> $total </td>
+	    <td> $correct </td>
+	    <td> $wrong </td>
+	    <td> $skip </td>
+	    <td> $created </td>
 	    </tr>
 	};
     }
@@ -93,18 +92,19 @@ sub list_scheduled_tests {
     
 }
 
+
 sub DISPLAY {
     print "<html>";
     print "<head>";
-    print "<title> List My Tests </title>";
-    link_css();
+    print "<title> Create a New Test </title>";
     print "</head>" . "\n";
     print "<body>";
     top_menu($SESSION{'sid'});
 
-    list_scheduled_tests($SESSION{'userid'});
+    list_my_reports();
     print "</body>";
     print "</html>";
+
 }
 
 sub MAIN {

@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Time-stamp: <2020-09-10 02:02:50 annamalai>
+# Time-stamp: <2020-09-11 13:11:41 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
 #
@@ -129,10 +129,12 @@ sub update_question {
 
     my $qid = $FORM{'qid'};
 
-    my $query = "UPDATE question SET qlatex = ?, qtype = ? WHERE qid = ?";
-    my $stmt = $dbh->prepare($query);
-    $stmt->execute($FORM{'question'}, $FORM{'qtype'}, $qid) or return undef;
-    log_append("Update question (qid=$qid) successfully");
+    my $query = "UPDATE question SET qhtml = ?, qlatex = ?, qtype = ? WHERE qid = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($FORM{'qhtml'},
+		   $FORM{'question'},
+		   $FORM{'qtype'},
+		   $qid) or die $dbh->errstr();
     $stmt->finish();
 }
 
@@ -179,7 +181,7 @@ sub select_answer_1 {
     my $dbh = shift;
     my $qid = shift;
 
-    my $query = "SELECT qid, chid, choice_latex, correct FROM answer_1 WHERE qid = ?";
+    my $query = "SELECT qid, chid, choice_latex, choice_html, correct FROM answer_1 WHERE qid = ?";
     my $stmt = $dbh->prepare($query);
     $stmt->execute($qid) or return undef;
     my @rows_aref;
@@ -189,8 +191,19 @@ sub select_answer_1 {
     }
     
     $stmt->finish();
-    log_append("Successfully fetched the choices.");
     return \@rows_aref;
+}
+
+sub get_correct_answer_1 {
+    my $dbh = shift;
+    my $qid = shift;
+
+    my $query = "SELECT chid FROM answer_1 WHERE qid = ? AND correct = true";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($qid) or die $dbh->errstr();
+    my ($correct_choice) = $stmt->fetchrow();
+    $stmt->finish();
+    return $correct_choice;
 }
 
 sub insert_answer_1 {
@@ -214,14 +227,20 @@ sub update_answer_1 {
     my %FORM = %{$form_href};
 
     my $qid = $FORM{'qid'};
-    my $query = "UPDATE answer_1 SET choice_latex = ?, correct = ? WHERE qid = ? AND chid = ?";
+    my $query = "UPDATE answer_1 SET choice_html = ?, choice_latex = ?, correct = ? WHERE qid = ? AND chid = ?";
     my $stmt = $dbh->prepare($query);
     my $correct_choice = $FORM{'choice_radio'};
     
     my $i = 1;
     while (1) {
 	my $choice_name = "choice_" . $i;
+	my $choice_name_html = "choice_html_" . $i;
+	
 	if (! defined $FORM{$choice_name}) {
+	    last;
+	}
+
+	if (! defined $FORM{$choice_name_html}) {
 	    last;
 	}
 
@@ -234,8 +253,9 @@ sub update_answer_1 {
 	}
 
 	my $qlatex = $FORM{$choice_name};
+	my $qhtml = $FORM{$choice_name_html};
 
-	$stmt->execute($qlatex, $is_correct, $qid, $i);
+	$stmt->execute($qhtml, $qlatex, $is_correct, $qid, $i);
 		       
 	$i++;
     }
@@ -580,39 +600,38 @@ sub check_acl {
 # BEGIN - TABLE: ry_test_schedule
 # -------------------------------------------------------------------------
 
-sub max_attempt_get {
-    my $dbh = shift;
-    my $userid = shift;
-    my $tst_id = shift;
+# sub max_attempt_get {
+#     my $dbh = shift;
+#     my $userid = shift;
+#     my $tst_id = shift;
     
-    my $query = q{SELECT sch_userid, sch_tst_id, max(sch_aid) }
-    . q{FROM ry_test_schedule WHERE sch_userid = ? AND sch_tst_id = ? }
-    . q{GROUP BY sch_userid, sch_tst_id};
+#     my $query = q{SELECT sch_userid, sch_tst_id, max(sch_aid) }
+#     . q{FROM ry_test_schedule WHERE sch_userid = ? AND sch_tst_id = ? }
+#     . q{GROUP BY sch_userid, sch_tst_id};
     
-    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
-    $stmt->execute($userid, $tst_id) or die $dbh->errstr();
+#     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+#     $stmt->execute($userid, $tst_id) or die $dbh->errstr();
 
-    my ($u, $t, $max_attempt) = $stmt->fetchrow();
-    $stmt->finish();
+#     my ($u, $t, $max_attempt) = $stmt->fetchrow();
+#     $stmt->finish();
 
-    if (! defined $max_attempt) {
-	$max_attempt = 0;
-    }
+#     if (! defined $max_attempt) {
+# 	$max_attempt = 0;
+#     }
     
-    return $max_attempt;
-}
+#     return $max_attempt;
+# }
 
 sub insert_test_schedule {
     my $dbh = shift;
     my $userid = shift;
     my $tst_id = shift;
-    my $aid = shift;
     my $from_date = shift;
     my $to_date = shift;
     
-    my $query = q{INSERT INTO ry_test_schedule (sch_userid, sch_tst_id, sch_aid, sch_from, sch_to) VALUES (?, ?, ?, ?, ?)};
+    my $query = q{INSERT INTO ry_test_schedule (sch_userid, sch_tst_id, sch_from, sch_to) VALUES (?, ?, ?, ?)};
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
-    $stmt->execute($userid, $tst_id, $aid, $from_date, $to_date) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $from_date, $to_date) or die $dbh->errstr();
     $stmt->finish();
 }
 
@@ -620,16 +639,14 @@ sub mark_test_submitted {
     my $dbh = shift;
     my $userid = shift;
     my $tst_id = shift;
-    my $att_id = shift;
     
     my $query = q{UPDATE ry_test_schedule
 		      SET sch_submitted = TRUE,
 		      sch_submit_time = CURRENT_TIMESTAMP
 		      WHERE sch_userid = ?
-		      AND sch_tst_id = ?
-		      AND sch_aid = ?};
+		      AND sch_tst_id = ?};
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
-    $stmt->execute($userid, $tst_id, $att_id) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id) or die $dbh->errstr();
     $stmt->finish();
 }
 
@@ -637,14 +654,12 @@ sub is_test_submitted {
     my $dbh = shift;
     my $userid = shift;
     my $tst_id = shift;
-    my $att_id = shift;
 
     my $query = q{SELECT sch_submitted FROM ry_test_schedule
 		      WHERE sch_userid = ?
-		      AND sch_tst_id = ?
-		      AND sch_aid = ?};
+		      AND sch_tst_id = ?};
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
-    $stmt->execute($userid, $tst_id, $att_id) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id) or die $dbh->errstr();
     my ($submitted) = $stmt->fetchrow();
     $stmt->finish();
 
@@ -663,16 +678,15 @@ sub prepare_test_attempt {
     my $dbh = shift;
     my $userid = shift;
     my $tst_id = shift;
-    my $aid = shift;
 
-    my $query = q{INSERT INTO ry_test_attempts (att_userid, att_tst_id, att_aid, att_qid) VALUES (?, ?, ?, ?)};
+    my $query = q{INSERT INTO ry_test_attempts (att_userid, att_tst_id, att_qid) VALUES (?, ?, ?)};
 
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
     my $qid_aref = get_qid_in_tst($dbh, $tst_id);
     my @qids = @{$qid_aref};
 
     foreach my $qid (@qids) {
-	$stmt->execute($userid, $tst_id, $aid, $qid) or die $dbh->errstr();
+	$stmt->execute($userid, $tst_id, $qid) or die $dbh->errstr();
     }
 
     $stmt->finish();
@@ -683,15 +697,14 @@ sub give_answer {
     my $choice = shift;
     my $userid = shift;
     my $tst_id = shift;
-    my $aid = shift;
     my $qid = shift;
     
     my $query = q{UPDATE ry_test_attempts
 		      SET att_given = ?, att_when = current_timestamp
 		      WHERE att_userid = ? AND att_tst_id = ? 
-		      AND att_aid = ? AND att_qid = ?};
+		      AND att_qid = ?};
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
-    $stmt->execute($choice, $userid, $tst_id, $aid, $qid) or die $dbh->errstr();
+    $stmt->execute($choice, $userid, $tst_id, $qid) or die $dbh->errstr();
     $stmt->finish();
 }
 
@@ -699,25 +712,44 @@ sub fetch_user_given_answer {
     my $dbh = shift;
     my $userid = shift;
     my $tst_id = shift;
-    my $aid = shift;
     my $qid = shift;
 
     my $query = q{SELECT att_given FROM ry_test_attempts WHERE
 		      att_userid = ? AND
 		      att_tst_id = ? AND
-		      att_aid = ? AND
 		      att_qid = ?};
     
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
-    $stmt->execute($userid, $tst_id, $aid, $qid) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $qid) or die $dbh->errstr();
     my ($given) = $stmt->fetchrow();
     $stmt->finish();
     return $given;
 }
 
-
 # -------------------------------------------------------------------------
 # END - TABLE: ry_test_attempts
+# -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# BEGIN - TABLE: ry_test_reports
+# -------------------------------------------------------------------------
+
+sub insert_test_report {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $total = shift;
+    my $correct = shift;
+    my $wrong = shift;
+    my $skip = shift;
+
+    my $query = "INSERT INTO ry_test_reports (rpt_userid, rpt_tst_id, rpt_q_total, rpt_q_correct, rpt_q_wrong, rpt_q_skip) VALUES (?, ?, ?, ?, ?, ?)";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $total, $correct, $wrong, $skip) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+# -------------------------------------------------------------------------
+# END - TABLE: ry_test_reports
 # -------------------------------------------------------------------------
 
 

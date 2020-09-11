@@ -71,6 +71,12 @@ sub display_question {
 	<td> <p> Question (in LaTeX format) </p> </td>
 	<td> <textarea name="question" cols="80" rows="10">$ROW{'qlatex'}</textarea> </td>
 	</tr>
+
+	<tr>
+	<td> <p> Question (in HTML format) </p> </td>
+	<td> <textarea name="qhtml" cols="80" rows="10">$ROW{'qhtml'}</textarea> </td>
+	</tr>
+	
 	
 	<tr>
 	<td> Question Type </td>
@@ -147,6 +153,7 @@ sub display_answer_1 {
     print qq{
 	<form action="tinker.pl" method="post">
 	<table>
+	    <tr> <th> Select </th> <th> Choice (LaTeX) </th> <th> Choice (HTML) </th> </tr>
     };
 
     my $iter = 1;
@@ -154,6 +161,7 @@ sub display_answer_1 {
 	my %row = %{$row_href};
 
 	my $choice_name = "choice_" . $iter;
+	my $choice_name_html = "choice_html_" . $iter;
 	my $choice_id = $row{'chid'};
 	my $correct = $row{'correct'};
 	my $checked;
@@ -168,6 +176,7 @@ sub display_answer_1 {
 	<tr>
 	    <td> <input type="radio" name="choice_radio" value="$choice_id" $checked/> </td>
 	    <td> <input type="text" name="$choice_name" value="$row{'choice_latex'}" /> </td>
+	    <td> <input type="text" name="$choice_name_html" value="$row{'choice_html'}" /> </td>
 	    </tr>
 	};
 

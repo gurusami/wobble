@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Time-stamp: <2020-09-10 06:33:16 annamalai>
+# Time-stamp: <2020-09-11 10:08:02 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
 #
@@ -54,12 +54,9 @@ sub PROCESS {
 	my $tst_id = $FORM{'selected_tst_id'};
 
 	$DBH->begin_work();
-	my $att_id = max_attempt_get($DBH, $userid, $tst_id);
-	$att_id++;
-	$FORM{'att_id'} = $att_id;
-	insert_test_schedule($DBH, $userid, $tst_id, $att_id,
+	insert_test_schedule($DBH, $userid, $tst_id,
 			     $FORM{'from_date'}, $FORM{'to_date'});
-	prepare_test_attempt($DBH, $userid, $tst_id, $att_id);
+	prepare_test_attempt($DBH, $userid, $tst_id);
 	$DBH->commit();
     }
 }
@@ -155,7 +152,6 @@ sub DISPLAY {
 	    . q{<table>} . "\n"
 	    . q{<tr> <th> Test Property </th> <th> Value </th> </tr>} . "\n"
 	    . qq{<tr> <td> Test ID </td> <td> $FORM{'selected_tst_id'} </td> </tr>} . "\n"
-	    . qq{<tr> <td> Attempts </td> <td> $FORM{'att_id'} </td> </tr> } . "\n"
 	    . qq{<tr> <td> User </td> <td> $FORM{'selected_username'} </td> </tr> } . "\n"
 	    . qq{<tr> <td> From Date </td> <td> $FORM{'from_date'} </td> </tr> } . "\n"
 	    . qq{<tr> <td> To Date </td> <td> $FORM{'to_date'} </td> </tr> } . "\n"
