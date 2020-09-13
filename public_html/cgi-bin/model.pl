@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Time-stamp: <2020-09-11 13:11:41 annamalai>
+# Time-stamp: <2020-09-12 11:06:30 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
 #
@@ -263,12 +263,13 @@ sub update_answer_1 {
 }
 
 sub insert_choices {
-    my ($dbh, $qid, $choices_aref, $answers_aref) = @_;
+    my ($dbh, $qid, $choices_aref, $choices_html_aref, $answers_aref) = @_;
 
     my @choices = @{$choices_aref};
+    my @choices_html = @{$choices_html_aref};
     my @answers = @{$answers_aref};
     
-    my $query = "INSERT INTO $TABLE{'answer_1'} (qid, chid, choice_latex, correct) VALUES ($qid, ?, ?, ?)";
+    my $query = "INSERT INTO $TABLE{'answer_1'} (qid, chid, choice_latex, choice_html, correct) VALUES ($qid, ?, ?, ?, ?)";
     my $rv;
 
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
@@ -277,7 +278,7 @@ sub insert_choices {
 
     my $chid = 1;
     for (my $i = 0; $i < $n_choices; $i++) {
-	$rv = $stmt->execute($chid, $choices[$i], $answers[$i]) or die "execution failed: $dbh->errstr()";
+	$rv = $stmt->execute($chid, $choices[$i], $choices_html[$i], $answers[$i]) or die "execution failed: $dbh->errstr()";
 
 	$chid++;
     }
@@ -750,6 +751,47 @@ sub insert_test_report {
 
 # -------------------------------------------------------------------------
 # END - TABLE: ry_test_reports
+# -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# BEGIN - TABLE: ry_qst_notes
+# -------------------------------------------------------------------------
+sub insert_note {
+  my $dbh = shift;
+  my $userid = shift;
+  my $qid = shift;
+  my $note = shift;
+
+  my $query = "INSERT INTO ry_qst_notes (no_qid, no_userid, no_note) VALUES (?, ?, ?)";
+  my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+  $stmt->execute($qid, $userid, $note) or die $dbh->errstr();
+  $stmt->finish();
+}
+
+sub select_note {
+  my $dbh = shift;
+  my $note_id = shift;
+
+  my $query = "SELECT no_note FROM ry_qst_notes WHERE note_id = ?";
+  my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+  $stmt->execute($note_id) or die $dbh->errstr();
+  my ($note) = $stmt->fetchrow();
+  $stmt->finish();
+  return $note;
+}
+
+sub update_note {
+  my $dbh = shift;
+  my $note_id = shift;
+  my $note = shift;
+
+  my $query = "UPDATE ry_qst_notes SET no_note = ? WHERE note_id = ?";
+  my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+  $stmt->execute($note, $note_id) or die $dbh->errstr();
+  $stmt->finish();
+}
+
+# -------------------------------------------------------------------------
+# END - TABLE: ry_qst_notes
 # -------------------------------------------------------------------------
 
 

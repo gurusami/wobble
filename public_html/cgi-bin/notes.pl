@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Time-stamp: <2020-09-09 13:41:07 annamalai>
+# Time-stamp: <2020-09-12 11:06:11 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
 #
@@ -49,16 +49,53 @@ sub COLLECT {
 
 sub PROCESS {
     if ($ENV{'REQUEST_METHOD'} eq "POST") {
+	if (defined $FORM{'add_note'}) {
+	    my $note = $FORM{'add_note'};
+	    insert_note($DBH, $SESSION{'userid'}, $FORM{'qid'}, $FORM{'note_html'});
+	}
     }
 }
+
+sub add_note {
+	print qq{
+		<h2> Add a Note </h2>
+			<form action="notes.pl" method="post">
+			<textarea name="note_html" cols="80" rows="20"></textarea>
+			<input type="hidden" name="sid" value="$SESSION{'sid'}" />
+			<input type="hidden" name="qid" value="$FORM{'qid'}" />
+			<input type="submit" name="add_note" value="Add Note" />
+			</form>
+	};
+}
+
+sub display_notes {
+    my $query =  q{SELECT note_id, no_note
+		       FROM ry_qst_notes WHERE no_qid = ? ORDER BY no_created DESC};
+
+    my $stmt = $DBH->prepare($query) or die $DBH->errstr();
+    $stmt->execute($FORM{'qid'}) or die $DBH->errstr();
+
+    print q{<h2> Available Notes </h2>};
+
+    while (my ($note_id, $note) = $stmt->fetchrow()) {
+        my $qs = qq[note-edit.pl?sid=$SESSION{'sid'}&note_id=$note_id];
+	print qq{<div> $note (<a href="$qs">Edit</a>)</div>};
+    }
+}
+
 
 sub DISPLAY {
     print "<html>";
     print "<head>";
-    print "<title> Create a New Test </title>";
+    print "<title> Add Notes for a Question </title>";
+    link_css();
+
     print "</head>" . "\n";
     print "<body>";
     top_menu($SESSION{'sid'});
+
+    add_note();
+    display_notes();
     print "</body>";
     print "</html>";
 

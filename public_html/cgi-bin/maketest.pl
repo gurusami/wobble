@@ -136,6 +136,7 @@ sub show_questions {
     print q{</table>};
     print q{<input type="submit" name="add_to_test" value="Add Question to Test" />};
     print qq{<input type="hidden" name="sid" value="$SESSION{'sid'}" />};
+    print qq{<input type="hidden" name="qid_min" value="$FORM{'qid_min'}" />};
     print qq{<input type="hidden" name="tst_id" value="$FORM{'tst_id'}" />} . "\n";
     print q{</form>};
 

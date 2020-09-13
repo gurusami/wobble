@@ -82,10 +82,13 @@ sub PROCESS {
 	    my $qst_html = $FORM{'qst_html'};
 
 	    my @choices;
+	    my @choices_html;
 
 	    for (my $i = 1; $i <= $FORM{'n_choices'}; $i++) {
 		my $choice_name = "choice" . $i;
+		my $choice_name_html = "choice_html_" . $i;
 		push @choices, trim($FORM{$choice_name});
+		push @choices_html, trim($FORM{$choice_name_html});
 	    }
 	    my @answers = get_answers();
 
@@ -96,7 +99,7 @@ sub PROCESS {
 
 	    $DBH->begin_work() or die $DBH->errstr;
 	    $SESSION{'qid'} = insert_question_type1($DBH, $SESSION{'userid'}, $quest, $qst_html);
-	    insert_choices($DBH, $SESSION{'qid'}, \@choices, \@answers);
+	    insert_choices($DBH, $SESSION{'qid'}, \@choices, \@choices_html, \@answers);
 	    $SESSION{'ref_id'} = insert_qid_ref_2($DBH, $SESSION{'qid'}, $FORM{'ref_id'});
 	    $DBH->commit() or die $DBH->errstr();
 	}
@@ -127,8 +130,9 @@ sub COLLECT {
 sub display_choice {
     my $choice_id = shift;
     my $choice_name = "choice" . $choice_id;
+    my $choice_name_html = "choice_html_" . $choice_id;
     my $choice_check = "check_choice" . $choice_id;
-    
+
     # ROW
     print q{<tr>};
     print qq{<td> <p> Choice: $choice_id </p> </td>};
@@ -136,6 +140,14 @@ sub display_choice {
 
     if ($FORM{$choice_name}) {
 	print "$FORM{$choice_name}";
+    }
+
+    print q{</textarea> </td>} . "\n";
+
+    print qq{<td> <textarea name="$choice_name_html" cols="80" rows="5" />};
+
+    if ($FORM{$choice_name_html}) {
+	print "$FORM{$choice_name_html}";
     }
 
     print q{</textarea> </td>} . "\n";
@@ -170,9 +182,11 @@ sub DISPLAY {
 
     # ROW
     if (defined $SESSION{'qid'}) {
+	my $qs=qq[tinker.pl?sid=$SESSION{'sid'}&qid=$SESSION{'qid'}];
+	my $note_qs=qq[notes.pl?sid=$SESSION{'sid'}&qid=$SESSION{'qid'}];
 	print q{<tr>};
 	print q{<td>Question ID</td>};
-	print q{<td>} . $SESSION{'qid'} . q{</td>};
+	print q{<td>} . $SESSION{'qid'} . qq{[<a href="$qs">Tinker</a>] [ <a href="$note_qs">Add Note</a> ] </td>};
 	print q{<td></td>};
 	print q{</tr>};
     }
@@ -201,13 +215,24 @@ sub DISPLAY {
 
     print q{</textarea> </td>} . "\n";
     print q{<td></td>};
-    print q{</tr>};
-
+    print q{</tr> </table>};
+    
+    print q{
+<h2> Multiple Choices </h2>
+<table>
+  <tr> <th>Choice ID</th>
+       <th>Choice (LaTeX)</th>
+       <th>Choice (HTML)</th>
+       <th>Correct Answer</th>
+  </tr>
+};
     
     # CHOICE ROW
     for (my $choice_id = 1; $choice_id <= $FORM{'n_choices'}; $choice_id++) {
 	display_choice($choice_id);
     }
+
+    print q{</table>};
 
     # ROW
     if (! defined $FORM{'ref_id'}) {

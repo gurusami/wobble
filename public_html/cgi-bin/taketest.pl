@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Time-stamp: <2020-09-11 13:43:41 annamalai>
+# Time-stamp: <2020-09-11 15:10:58 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
 #
@@ -110,8 +110,6 @@ sub show_test_result() {
     my ($total, $correct, $wrong, $skipped) = $stmt->fetchrow();
     $stmt->finish;
     
-    my $percent = ($correct / $total) * 100;
-
     print qq{
     <h2> Test Results </h2>
 	<table>
@@ -119,13 +117,15 @@ sub show_test_result() {
 	<tr> <td> Correct Answers </td> <td> $correct </td> </tr>
 	<tr> <td> Skipped Questions </td> <td> $skipped </td> </tr>
 	<tr> <td> Wrong Answers </td> <td> $wrong </td> </tr>
-	<tr> <td> Percentage Score </td> <td> $percent % </tr>
 	</table>
     }
 }
     
+# Obtain the number of questions that has been correctly answered by the user.
 sub test_correct_count() {
-    my $query = "SELECT count(*) FROM ry_test_attempts a, answer_1 b  WHERE a.att_qid = b.qid AND a.att_given = b.chid and b.correct is true";
+    my $query = qq[SELECT count(*) FROM ry_test_attempts a, answer_1 b
+WHERE a.att_userid = $SESSION{'userid'} AND a.att_tst_id = $FORM{'tst_id'}
+AND a.att_qid = b.qid AND a.att_given = b.chid and b.correct is true];
 
     my $stmt = $DBH->prepare($query) or die $DBH->errstr();
     $stmt->execute() or die $DBH->errstr();
@@ -168,7 +168,7 @@ sub show_test_details {
     }	
     print q{</ul>};
 
-    if ($SESSION{'test_submitted'}) {
+    if ($SESSION{'test_submitted'} == 1) {
 	show_test_result();
     }
 }

@@ -194,6 +194,7 @@ sub display_answer_1 {
     # Add an option to add a choice.  New form!
     print qq{
     <form action="tinker.pl" method="post">
+	<input type="hidden" name="sid" value="$sid" />
 	<input type="hidden" name="qid" value="$qid" />
 	<input type="hidden" name="chid" value="$iter" />
 	<input type="text" name="the_choice" />
@@ -207,22 +208,6 @@ sub display_error {
     print qq{$mesg};
 }
 
-sub display_top {
-    print q[<div class="top"> ];
-    display_tinker_form();
-    display_add_question_form();
-    print q[</div> <!-- class="top" -->];
-};
-
-sub display_add_question_form {
-    print qq{
-    <div>
-    <form action="tinker.pl" method="POST">
-	<input type="submit" name="add_new_question" value=\"Add New Question\" />
-	</form>
-	</div>
-    };
-}
 
 sub display_child_questions {
     my $dbh = shift;

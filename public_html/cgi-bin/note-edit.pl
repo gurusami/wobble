@@ -49,6 +49,12 @@ sub COLLECT {
 
 sub PROCESS {
     if ($ENV{'REQUEST_METHOD'} eq "POST") {
+       if (defined $FORM{'fetch_note_id'}) {
+            $FORM{'note'} = select_note($DBH, $FORM{'note_id'});
+       }
+       if (defined $FORM{'update_note_id'}) {
+            update_note($DBH, $FORM{'note_id'}, $FORM{'note'});
+       }
     }
 }
 
@@ -59,6 +65,26 @@ sub DISPLAY {
     print "</head>" . "\n";
     print "<body>";
     top_menu($SESSION{'sid'});
+
+    if (! defined $FORM{'note_id'}) {
+    print qq{
+<form action="note-edit.pl" method="post">
+  <input type="hidden" name="sid" value="$SESSION{'sid'}" />
+  <input type="number" name="note_id" />
+  <input type="submit" name="fetch_note_id" value="Fetch Note"/>
+</form>
+};
+    } else {
+    print qq{
+<form action="note-edit.pl" method="post">
+  <input type="hidden" name="sid" value="$SESSION{'sid'}" />
+  <input type="hidden" name="note_id" value="$FORM{'note_id'}"/>
+  <textarea rows="20" cols="80" name="note">$FORM{'note'}</textarea>
+  <input type="submit" name="update_note_id" value="Update Note"/>
+</form>
+};
+    }
+
     print "</body>";
     print "</html>";
 

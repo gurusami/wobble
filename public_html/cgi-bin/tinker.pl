@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Time-stamp: <2020-09-10 14:36:57 annamalai>
+# Time-stamp: <2020-09-12 10:27:16 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
 #
@@ -44,6 +44,24 @@ my $DBH;
 
 # The question identifier (qid).
 my $qid = 0;
+
+sub display_top {
+    print q[<div class="top"> ];
+    display_tinker_form();
+    display_add_question_form();
+    print q[</div> <!-- class="top" -->];
+};
+
+sub display_add_question_form {
+    print qq{
+    <div>
+    <form action="tinker.pl" method="POST">
+	<input type="hidden" name="sid" value="$SESSION{'sid'}" />
+	<input type="submit" name="add_new_question" value=\"Add New Question\" />
+	</form>
+	</div>
+    };
+}
 
 sub display_tinker_form {
     print qq{
@@ -157,6 +175,10 @@ sub PROCESS {
     }
 }
 
+sub display_add_note {
+    print qq{<a href="notes.pl?sid=$SESSION{'sid'}&qid=$FORM{'qid'}">Add Note</a>};
+}
+
 sub DISPLAY {
     print "<html>";
     print "<head>";
@@ -216,6 +238,7 @@ sub DISPLAY {
 	display_parent($DBH, $qrow_href);
 	display_references($DBH);
 	display_add_reference();
+        display_add_note();
     }
 
     print "</body>";
