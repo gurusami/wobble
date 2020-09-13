@@ -19,6 +19,7 @@ my $dbh;
 # MySQL function sha2(?, 256) is being used to store password.
 # My temp password is 'asterix'.
 # Mythili password is 'W0rkNts3'
+# Ramya password is 'ramya123'
 
 sub display_login {
     print q{

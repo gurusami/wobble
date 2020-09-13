@@ -53,41 +53,43 @@ sub PROCESS {
 }
 
 sub list_scheduled_tests {
-    my $query =  q{SELECT sch_userid, sch_tst_id, sch_aid, sch_from, sch_to,
-		       sch_submitted, sch_created_on
-		       FROM ry_test_schedule ORDER BY sch_userid};
+    my $query =  q{SELECT sch_userid, b.username, sch_tst_id, sch_from, sch_to,
+                          sch_submitted, sch_created_on
+                   FROM ry_test_schedule a, ry_users b
+                   WHERE a.sch_userid = b.userid ORDER BY sch_userid};
 
     my $stmt = $DBH->prepare($query) or die $DBH->errstr();
     $stmt->execute() or die $DBH->errstr();
 
     print q{
-    <table>
-	<tr> <th> User ID </th>
-	    <th> Test ID </th>
-	    <th> Attempt Number </th>
-	    <th> From Date </th>
-	    <th> To Date </th>
-	    <th> Submitted On </th>
-	    <th> Schedule Created On </th>
-	    </tr>
-	};
+<table>
+  <tr>
+    <th> User ID </th>
+    <th> User Name </th>
+    <th> Test ID </th>
+    <th> From Date </th>
+    <th> To Date </th>
+    <th> Submitted On </th>
+    <th> Schedule Created On </th>
+  </tr>
+};
 
-
-    while (my ($sch_userid, $sch_tst_id, $sch_aid, $sch_from, $sch_to, 
+    while (my ($sch_userid, $username, $sch_tst_id, $sch_from, $sch_to, 
 	       $sch_submitted, $sch_created_on) = $stmt->fetchrow()) {
 
-	my $qs=qq{taketest.pl?sid=$SESSION{'sid'}&tst_id=$sch_tst_id&att_id=$sch_aid};
+	my $qs=qq{taketest.pl?sid=$SESSION{'sid'}&tst_id=$sch_tst_id};
 	
 	print qq{
-	<tr> <td> $sch_userid </td>
-	    <td> <a href="$qs">$sch_tst_id</a> </td>
-	    <td> $sch_aid </td>
-	    <td> $sch_from </td>
-	    <td> $sch_to </td>
-	    <td> $sch_submitted </td>
-	    <td> $sch_created_on </td>
-	    </tr>
-	};
+<tr>
+  <td> $sch_userid </td>
+  <td> $username </td>
+  <td> <a href="$qs">$sch_tst_id</a> </td>
+  <td> $sch_from </td>
+  <td> $sch_to </td>
+  <td> $sch_submitted </td>
+  <td> $sch_created_on </td>
+</tr>
+};
     }
 
     print q{</table>};

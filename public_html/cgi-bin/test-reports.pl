@@ -96,7 +96,10 @@ sub list_my_reports {
 sub DISPLAY {
     print "<html>";
     print "<head>";
-    print "<title> Create a New Test </title>";
+    print "<title> Wobble: List My Test Reports </title>";
+
+    link_css();
+
     print "</head>" . "\n";
     print "<body>";
     top_menu($SESSION{'sid'});

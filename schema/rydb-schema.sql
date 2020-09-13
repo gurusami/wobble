@@ -63,15 +63,17 @@ DROP TABLE IF EXISTS `question`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `question` (
   `qid` int NOT NULL AUTO_INCREMENT,
-  `userid` int DEFAULT NULL,
+  `userid` int NOT NULL,
   `qparent` int DEFAULT NULL,
   `qlatex` text,
   `qimage` blob,
   `qhtml` text,
   `qtype` int DEFAULT NULL,
   `qcreated_on` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`qid`)
-) ENGINE=InnoDB AUTO_INCREMENT=210 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  PRIMARY KEY (`qid`),
+  KEY `userid` (`userid`),
+  CONSTRAINT `question_ibfk_1` FOREIGN KEY (`userid`) REFERENCES `ry_users` (`userid`)
+) ENGINE=InnoDB AUTO_INCREMENT=241 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -133,7 +135,7 @@ CREATE TABLE `ry_qst_notes` (
   KEY `no_c2` (`no_userid`),
   CONSTRAINT `no_c1` FOREIGN KEY (`no_qid`) REFERENCES `question` (`qid`),
   CONSTRAINT `no_c2` FOREIGN KEY (`no_userid`) REFERENCES `ry_users` (`userid`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -292,7 +294,7 @@ CREATE TABLE `ry_tests` (
   `tst_title` char(128) DEFAULT NULL,
   PRIMARY KEY (`tst_id`),
   UNIQUE KEY `tst_title` (`tst_title`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -306,10 +308,11 @@ CREATE TABLE `ry_users` (
   `userid` int NOT NULL AUTO_INCREMENT,
   `username` char(10) NOT NULL,
   `token` char(64) NOT NULL,
+  `ur_created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`userid`),
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `username_2` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -321,4 +324,4 @@ CREATE TABLE `ry_users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-09-13 11:06:40
+-- Dump completed on 2020-09-13 22:24:00

@@ -129,14 +129,16 @@ sub read_get_data {
 }
 
 sub top_menu {
-    my $sid = shift;
-    print qq{
+  my $sid = shift;
+  print qq{
+  <div class="top-menu">
     <ul id="menu">
-	<li> [<a href="menu.pl?sid=$sid">Main Menu</a>] </li>
-	<li> [<a href="logout.pl?sid=$sid">Logout</a>] </li>
-	</ul>
-    };
-    print q[<hr>];
+      <li> [<a href="menu.pl?sid=$sid">Main Menu</a>] </li>
+      <li> [<a href="logout.pl?sid=$sid">Logout</a>] </li>
+    </ul>
+  </div>
+  <hr>
+};
 }
 
 sub login_url {

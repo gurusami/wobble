@@ -1,4 +1,28 @@
 #!/usr/bin/perl
+#
+# Time-stamp: <2020-09-09 13:41:07 annamalai>
+# Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
+# Created on 07-Sept-2020
+#
+###########################################################################
+#
+# Copyright (C) 2020 Annamalai Gurusami.  All rights reserved.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see
+# <https://www.gnu.org/licenses/>.
+#
+###########################################################################
 
 use strict;
 use warnings;
@@ -14,6 +38,13 @@ my %FORM;
 my $qid_previous;
 my $qid_next;
 my %SESSION;
+
+sub local_style {
+  print q{
+<style>
+</style>
+};
+}
 
 sub DISPLAY {
     if (defined $FORM{'qid'}) {
@@ -52,7 +83,7 @@ sub DISPLAY {
 	$qid_previous = $qid_from;
     }
 
-    my $max_qid = select_max_qid($DBH);
+    my $max_qid = $SESSION{'max_qid'};
 
     if ($qid_from + $qid_count > $max_qid) {
 	$qid_next = $qid_from;
@@ -60,9 +91,18 @@ sub DISPLAY {
 	$qid_next = $qid_from + $qid_count;
     }
 
-    print qq[<tr> <td> <a href="browse.pl?sid=$SESSION{'sid'}&qid=$qid_previous">Previous</a> </td>];
-    print qq[<td> </td> <td> </td> <td> <a href="browse.pl?sid=$SESSION{'sid'}&qid=$qid_next">Next</a> </td> </tr>];
     print q[</table>];
+
+    my $last_qid = $max_qid - $qid_count + 1;
+    print qq{
+<div>
+  <ul id="menu">
+    <li> [ <a href="browse.pl?sid=$SESSION{'sid'}&qid=$qid_previous">Previous</a> ] </li>
+    <li> [ <a href="browse.pl?sid=$SESSION{'sid'}&qid=$qid_next">Next</a> ] </li>
+    <li> [ <a href="browse.pl?sid=$SESSION{'sid'}&qid=$last_qid">Last</a> ] </li>
+  <ul>
+</div>
+};
 
     $stmt->finish();
     print "</body>";
@@ -82,12 +122,17 @@ sub COLLECT {
     %FORM = %{$form_href};
 }
 
+sub PROCESS {
+    $SESSION{'max_qid'} = select_max_qid($DBH);
+}
+
 sub MAIN {
     CTOR();
     COLLECT();
     content_type();
     my $s_ref = CHECK_SESSION($DBH, $FORM{'sid'});
     %SESSION = %{$s_ref};
+    PROCESS();
     DISPLAY();
     DTOR();
     exit(0);
