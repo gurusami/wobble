@@ -1,0 +1,7 @@
+" Created: Mon 14 Sep 2020 01:20:01 PM IST
+" Last Modified: Mon 14 Sep 2020 01:57:24 PM IST
+" Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
+
+set tabstop=4
+set shiftwidth=4
+set expandtab

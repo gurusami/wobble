@@ -103,6 +103,20 @@ CREATE TABLE `ry_biblio` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `ry_images`
+--
+
+DROP TABLE IF EXISTS `ry_images`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ry_images` (
+  `img_id` int unsigned NOT NULL AUTO_INCREMENT,
+  `img_image` blob,
+  PRIMARY KEY (`img_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `ry_qid_ref`
 --
 
@@ -113,6 +127,20 @@ CREATE TABLE `ry_qid_ref` (
   `qid` int NOT NULL,
   `ref_id` int NOT NULL,
   `notes` text
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ry_qst_images_html`
+--
+
+DROP TABLE IF EXISTS `ry_qst_images_html`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ry_qst_images_html` (
+  `hi_qid` int unsigned NOT NULL,
+  `hi_image` int unsigned NOT NULL,
+  PRIMARY KEY (`hi_qid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -324,4 +352,4 @@ CREATE TABLE `ry_users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-09-13 22:24:00
+-- Dump completed on 2020-09-15  0:12:55

@@ -1,5 +1,6 @@
 #!/usr/bin/perl
-#
+# Created: Mon 14 Sep 2020 10:39:48 PM IST
+# Last Modified: Mon 14 Sep 2020 11:58:48 PM IST
 # Time-stamp: <2020-09-10 06:27:50 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
@@ -68,11 +69,11 @@ sub collect_data {
     my %form;
 
     my $m = $ENV{'REQUEST_METHOD'};
-    
+
     if ($m eq "POST") {
-	%form = read_post_data();
+        %form = read_post_data();
     } elsif ($m eq "GET") {
-	%form = read_get_data();
+        %form = read_get_data();
     }
 
     return \%form;
@@ -82,30 +83,76 @@ sub print_hash {
     my $form_href = shift;
     my %FORM = %{$form_href};
 
-    print "<table>";
+    print q{<table border="1">};
     foreach my $key (keys %FORM) {
 	print "<tr>";
-	print "<td>" . $key . "</td>";
-	print "<td>" . $FORM{$key} . "</td>";
+	print "<td>[" . $key . "]</td>";
+	print "<td>[" . $FORM{$key} . "]</td>";
 	print "</tr>";
     }
     print "</table>";
+}
+
+sub read_post_multipart {
+    my $buffer = shift;
+    my %form;
+    my $boundary;
+
+    # This can be used for debugging.
+    $form{'data'} = $buffer;
+    
+    $ENV{'CONTENT_TYPE'} =~ /boundary=(.*$)/ or die "No boundary found";
+    $boundary = $1;
+
+    # For the boundary parameter specification refer to
+    # https://tools.ietf.org/html/rfc7578
+    my @data_array = split(/\r\n--$boundary/, $buffer);
+
+    foreach my $data (@data_array) {
+        my ($header_part, $body_part) = split(/\r\n\r\n/, $data);
+        my @headers = split(/\r\n/, $header_part);
+        foreach my $header (@headers) {
+            my ($header_name, $header_value) = split(/: /, $header);
+            if ($header_name eq "Content-Disposition") {
+                my @sub_header_parts = split(/; /, $header_value);
+
+                # Remove the form-data from the array.
+                shift @sub_header_parts; 
+
+                foreach my $sub_header (@sub_header_parts) {
+                    my ($key, $value) = split(/=/, $sub_header);
+                    $value =~ /"(.*)"/;
+                    if ($key eq "name") {
+                        $form{$1} = $body_part;
+                    } else {
+                        $form{$key} = $1;
+                    }
+                }
+            }
+        }
+    }
+
+    return %form;
 }
 
 sub read_post_data {
     my $buffer;
     my @pairs;
     my %form;
-    
+
     read(STDIN, $buffer, $ENV{'CONTENT_LENGTH'});
+
+    if ($ENV{'CONTENT_TYPE'} =~ "multipart/form-data") {
+        return read_post_multipart($buffer);
+    }
 
     @pairs = split(/&/, $buffer); 
     foreach my $pair (@pairs)  
     { 
-	my ($name, $value) = split(/=/, $pair);
-	$value =~ tr/+/ /; 
-	$value = uri_decode($value);
-	$form{$name} = $value;
+        my ($name, $value) = split(/=/, $pair);
+        $value =~ tr/+/ /; 
+        $value = uri_decode($value);
+        $form{$name} = $value;
     }
     return %form;
 }
@@ -151,6 +198,7 @@ sub login_url {
 }
 
 sub goto_login {
+    my $sid = shift;
     my $url = login_url();
 
     print qq{
@@ -160,7 +208,7 @@ sub goto_login {
 	<title> Invalid Session </title>
 	</head>
 	<body>
-	<p>Invalid Session (Maybe it is expired).  Login <a href="$url">again</a>.</p>
+	<p>Invalid Session (sid=$sid) (Maybe it is expired).  Login <a href="$url">again</a>.</p>
     };
 
     # print_hash(\%ENV);
@@ -173,17 +221,18 @@ sub goto_login {
 sub CHECK_SESSION {
     my $dbh = shift;
     my $sid = shift;
-    
+
     my $row_href = is_session_valid($dbh, $sid);
     my %session;
-    
+
     if (! defined $row_href) {
-	goto_login();
+         goto_login($sid);
     }
-    
+
     my %row = %{$row_href};
     $session{'sid'} = $sid;
     $session{'userid'} = $row{'userid'};
+    # $session{'userid'} = 1;
 
     return \%session;
 }

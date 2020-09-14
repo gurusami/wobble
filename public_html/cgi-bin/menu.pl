@@ -68,6 +68,7 @@ sub MAIN {
     IF_AUTH_LINK("list-mytests.pl", "List My Tests");
     IF_AUTH_LINK("test-reports.pl", "My Test Reports");
     IF_AUTH_LINK("note-edit.pl", "Edit a Note");
+    IF_AUTH_LINK("image-upload.pl", "Upload an image");
     print "</ul>";
     print "</body>";
 
