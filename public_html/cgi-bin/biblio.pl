@@ -16,7 +16,7 @@ sub display_add_reference {
     print qq{
     <div>
 	<h2> Add Reference </h2>
-	<form action="biblio.pl" method="post">
+	<form action="biblio.pl?sid=$FORM{'sid'}" method="post">
 	<table>
 
 	<tr>
@@ -28,6 +28,8 @@ sub display_add_reference {
 	<td> Reference Type </td>
 	<td> <select name="ref_type"> 
 	<option value="1">Book</option>
+	<option value="2">Online</option>
+	<option value="3">Others</option>
 	</select>
 	</td>
 	</tr>
@@ -84,6 +86,7 @@ sub display_add_reference {
 
 	</table>
 
+	<input type="hidden" name="sid" value="$SESSION{'sid'}" />
 	<input type="submit" name="ref_add" value="Add" />
 	</form>
 	</div>

@@ -1,5 +1,6 @@
 #!/usr/bin/perl
-#
+# Created: Mon 14 Sep 2020 01:20:01 PM IST
+# Last Modified: Tue 15 Sep 2020 12:11:33 PM IST
 # Time-stamp: <2020-09-09 13:41:07 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
@@ -55,13 +56,26 @@ sub PROCESS {
 sub DISPLAY {
     print "<html>";
     print "<head>";
-    print "<title> Create a New Test </title>";
-
+    print "<title> Wobble: View an image </title>";
     link_css();
-
     print "</head>" . "\n";
     print "<body>";
     top_menu($SESSION{'sid'});
+
+    my $qs = qq[image-view.pl?sid=$SESSION{'sid'}];
+
+print qq{
+<form action="$qs" method="post">
+  <input type="hidden" name="sid" value="$SESSION{'sid'}" />
+  <input type="number" name="img_id" value="$FORM{'img_id'}" />
+  <input type="submit" name="image_view" value="View Image" />
+</form>
+};
+
+    if (defined $FORM{'img_id'}) {
+        embed_image($DBH, $FORM{'img_id'});
+    }
+
     print "</body>";
     print "</html>";
 

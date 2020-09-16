@@ -1,8 +1,7 @@
 #!/usr/bin/perl
-#
-# Time-stamp: <2020-09-09 13:41:07 annamalai>
+# Created: Wed 16 Sep 2020 11:26:33 AM IST
+# Last-Modified: Wed 16 Sep 2020 12:33:06 PM IST
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
-# Created on 07-Sept-2020
 #
 ###########################################################################
 #
@@ -49,19 +48,59 @@ sub COLLECT {
 
 sub PROCESS {
     if ($ENV{'REQUEST_METHOD'} eq "POST") {
+
+        if (defined $FORM{'addimage'}) {
+            my $max_seq = qst_max_img_seq($DBH, $FORM{'qid'});
+            $FORM{'seq'} = 1 + $max_seq;
+            add_img_to_qst($DBH, $FORM{'qid'}, $FORM{'img_id'}, $FORM{'seq'});
+        }
+    }
+
+    if (! defined $FORM{'low_img_id'} ) {
+        $FORM{'low_img_id'} = 0;
+    }
+}
+
+sub browse_images {
+    my $low_img_id = $FORM{'low_img_id'};
+
+    my $query = "SELECT img_id, to_base64(img_image), img_type FROM ry_images WHERE img_id > ? LIMIT 20";
+    my $stmt = $DBH->prepare($query) or die $DBH->errstr();
+    $stmt->execute($low_img_id) or die $DBH->errstr();
+
+    while (my ($img_id, $image, $image_type) = $stmt->fetchrow()) {
+print qq^
+<div class="show_image">
+<img src="data:image/$image_type;base64,
+$image
+"/>
+<form action="image-addq.pl?sid=$SESSION{'sid'}" method="post">
+    <input type="hidden" name="qid" value="$FORM{'qid'}" />
+    <input type="hidden" name="img_id" value="$img_id" />
+    <input type="hidden" name="low_img_id" value="$low_img_id" />
+    <input type="submit" name="addimage" value="Add This Image" />
+</form>
+</div>
+^;
     }
 }
 
 sub DISPLAY {
     print "<html>";
     print "<head>";
-    print "<title> Create a New Test </title>";
+    print "<title> Wobble: Add Images to Question </title>";
 
     link_css();
 
     print "</head>" . "\n";
     print "<body>";
     top_menu($SESSION{'sid'});
+
+    defined $FORM{'qid'} || die "<p> No QID given </p>";
+    defined $FORM{'sid'} || die "<p> No Session ID given </p>";
+    
+    browse_images();
+
     print "</body>";
     print "</html>";
 

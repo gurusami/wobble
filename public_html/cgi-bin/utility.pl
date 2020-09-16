@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # Created: Mon 14 Sep 2020 10:39:48 PM IST
-# Last Modified: Mon 14 Sep 2020 11:58:48 PM IST
+# Last Modified: Wed 16 Sep 2020 04:38:18 PM IST
 # Time-stamp: <2020-09-10 06:27:50 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
@@ -270,6 +270,64 @@ sub CHECK_AUTH {
 sub link_css {
     my $css_file = $ENV{'CONTEXT_PREFIX'} . "/wobble.css";
     print qq{<link rel="stylesheet" href="$css_file">};
+}
+
+sub embed_image {
+    my $dbh = shift;
+    my $img_id = shift;
+
+    my $query = "SELECT img_type, to_base64(img_image) FROM ry_images WHERE img_id = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($img_id) or die $dbh->errstr();
+    my ($image_type, $image) = $stmt->fetchrow();
+
+print qq{
+<img src="data:image/$image_type;base64,
+$image
+"/>
+};
+
+    $stmt->finish();
+}
+
+sub select_refs {
+    my $dbh = shift;
+    my $name = shift;
+
+    my $query = "SELECT ref_id, ref_title FROM ry_biblio";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute() or die $dbh->errstr();
+
+    print qq{<select name="$name">};
+    while (my ($ref_id, $ref_title) = $stmt->fetchrow()) {
+        print qq{<option value="$ref_id"> $ref_title </option>};
+    }
+    print qq{</select>};
+}
+
+sub html_select_refs {
+    my $dbh = shift;
+    my $name = shift;
+    my $ref_id_selected = shift;
+    my $html;
+
+    my $query = "SELECT ref_id, ref_title FROM ry_biblio";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute() or die $dbh->errstr();
+
+    $html = qq{<select name="$name">};
+
+    while (my ($ref_id, $ref_title) = $stmt->fetchrow()) {
+        my $sel = "";
+
+        if (defined $ref_id_selected && $ref_id eq $ref_id_selected) {
+            $sel = "selected";
+        }
+        $html = $html . qq{<option value="$ref_id" $sel> $ref_title </option>};
+    }
+    $html = $html . qq{</select>};
+
+    return $html;
 }
 
 1;

@@ -11,6 +11,6 @@ BD="/home/annamalai/i/mysql-8.0.21"
 DD=/home/annamalai/i/my_data
 LF=$DD/mysql.log
 SF=$DD/mysql.sock
-cnf="/home/annamalai/wobble.git/conf/wobble.cnf"
+cnf="/home/annamalai/wobble.git/conf/my.cnf"
 
-$BD/bin/mysqld --defaults-file="$cnf" --basedir=$BD --datadir=$DD --log-error=$LF --socket=$SF --user=`whoami` --console --max_allowed_packet=500M --lc-messages-dir=./sql/share --port=8888
+$BD/bin/mysqld --defaults-file="$cnf" --basedir=$BD --datadir=$DD --log-error=$LF --socket=$SF --user=`whoami` --console --max_allowed_packet=500M --lc-messages-dir=./sql/share

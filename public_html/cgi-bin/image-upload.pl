@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # Created: Mon 14 Sep 2020 01:20:01 PM IST
-# Last Modified: Tue 15 Sep 2020 12:10:25 AM IST
+# Last Modified: Tue 15 Sep 2020 12:10:46 PM IST
 # Time-stamp: <2020-09-09 13:41:07 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
@@ -50,10 +50,7 @@ sub COLLECT {
 
 sub PROCESS {
     if ($ENV{'REQUEST_METHOD'} eq "POST") {
-        print_hash(\%ENV);
-        print q{<hr>};
-        print_hash(\%FORM);
-        insert_image($DBH, $FORM{'filedata'});
+        $FORM{'img_id'} = insert_image($DBH, $FORM{'img_type'}, $FORM{'filedata'});
     }
 }
 
@@ -73,9 +70,21 @@ print qq{
   <input type="hidden" name="sid" value="$SESSION{'sid'}" />
   <input type="hidden" name="MAX_FILE_SIZE" value="1048576" />
   <input type="file" name="filedata" />
+  <select name="img_type">
+    <option value="png">png</option>
+    <option value="jpg">jpg</option>
+  </select>
   <input type="submit" name="image_upload" value="Upload Image" />
 </form>
 };
+
+    if (defined $FORM{'img_id'}) {
+        print qq{
+<p> Successfully inserted image: $FORM{'img_id'} </p>
+};
+
+        embed_image($DBH, $FORM{'img_id'});
+    }
 
     print "</body>";
     print "</html>";

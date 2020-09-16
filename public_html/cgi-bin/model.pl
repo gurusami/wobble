@@ -42,8 +42,8 @@ my %TABLE = (
 sub last_insert_id {
     my $dbh = shift;
     
-    my $sel_stmt = $dbh->prepare("SELECT last_insert_id()");
-    $sel_stmt->execute();
+    my $sel_stmt = $dbh->prepare("SELECT last_insert_id()") or die $dbh->errstr();
+    $sel_stmt->execute() or die $dbh->errstr();
     my ($ins_id) = $sel_stmt->fetchrow();
     $sel_stmt->finish();
 
@@ -56,13 +56,25 @@ sub last_insert_id {
 
 sub insert_question {
     my $dbh = shift;
+    my $userid = shift;
 
-    my $query = "INSERT INTO question (qlatex) VALUES ('')";
-    my $stmt = $dbh->prepare($query);
-    $stmt->execute();
+    my $query = "INSERT INTO question (userid) VALUES (?)";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid) or die $dbh->errstr();
     $stmt->finish();
 
     return last_insert_id($dbh);
+};
+
+sub insert_question_withqid {
+    my $dbh = shift;
+    my $qid = shift;
+    my $userid = shift;
+
+    my $query = "INSERT INTO question (qid, userid) VALUES (?, ?)";
+    my $stmt = $dbh->prepare($query);
+    $stmt->execute($qid, $userid);
+    $stmt->finish();
 };
 
 
@@ -71,10 +83,11 @@ sub insert_question_type1 {
     my $userid = shift;
     my $question = shift;
     my $qst_html = shift;
+    my $qsrc = shift;
 
-    my $query = "INSERT INTO $TABLE{'question'} (userid, qlatex, qhtml, qtype) VALUES (?, ?, ?, 1)";
+    my $query = "INSERT INTO $TABLE{'question'} (userid, qlatex, qhtml, qtype, qsrc_ref) VALUES (?, ?, ?, 1, ?)";
     my $stmt = $dbh->prepare($query) or die "prepare statement failed: $dbh->errstr()";
-    $stmt->execute($userid, $question, $qst_html) or die "execution failed: $dbh->errstr()";
+    $stmt->execute($userid, $question, $qst_html, $qsrc) or die "execution failed: $dbh->errstr()";
     $stmt->finish();
 
     return last_insert_id($dbh);
@@ -102,7 +115,7 @@ sub select_question {
     my $dbh = shift;
     my $qid = shift;
 
-    my $query = "SELECT qid, qparent, qlatex, qimage, qhtml, qtype FROM question WHERE qid = ?";
+    my $query = "SELECT * FROM question WHERE qid = ?";
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
     $stmt->execute($qid) or die $dbh->errstr();
     my $row = $stmt->fetchrow_hashref();
@@ -129,11 +142,13 @@ sub update_question {
 
     my $qid = $FORM{'qid'};
 
-    my $query = "UPDATE question SET qhtml = ?, qlatex = ?, qtype = ? WHERE qid = ?";
+    my $query = "UPDATE question SET qhtml = ?, qlatex = ?, qtype = ?, qsrc_ref = ?, qlast_updated = CURRENT_TIMESTAMP WHERE qid = ?";
+
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
     $stmt->execute($FORM{'qhtml'},
 		   $FORM{'question'},
 		   $FORM{'qtype'},
+		   $FORM{'qsrc_ref'},
 		   $qid) or die $dbh->errstr();
     $stmt->finish();
 }
@@ -798,11 +813,12 @@ sub update_note {
 # -------------------------------------------------------------------------
 sub insert_image {
   my $dbh = shift;
+  my $img_type = shift;
   my $img = shift;
 
-  my $query = "INSERT INTO ry_images (img_image) VALUES (?)";
+  my $query = "INSERT INTO ry_images (img_type, img_image) VALUES (?, ?)";
   my $stmt = $dbh->prepare($query) or die $dbh->errstr();
-  $stmt->execute($img) or die $dbh->errstr();
+  $stmt->execute($img_type, $img) or die $dbh->errstr();
   $stmt->finish();
 
   return last_insert_id($dbh);
@@ -810,6 +826,45 @@ sub insert_image {
 # -------------------------------------------------------------------------
 # END - TABLE: ry_images
 # -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# BEGIN - TABLE: ry_qst_images_html
+# -------------------------------------------------------------------------
+sub qst_max_img_seq {
+    my $dbh = shift;
+    my $qid = shift;
+    
+    my $query = q{SELECT qi_qid, max(qi_seq) FROM ry_qst_images_html
+WHERE qi_qid = ? GROUP BY qi_qid};
+
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($qid) or die $dbh->errstr();
+
+    my ($tmp_qid, $max_seq) = $stmt->fetchrow();
+    $stmt->finish();
+
+    if (! defined $max_seq) {
+        $max_seq = 0;
+    }
+    
+    return $max_seq;
+}
+
+sub add_img_to_qst {
+    my $dbh = shift;
+    my $qid = shift;
+    my $img_id = shift;
+    my $seq = shift;
+
+    my $query = "INSERT INTO ry_qst_images_html (qi_qid, qi_seq, qi_img_id) VALUES (?, ?, ?)";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($qid, $seq, $img_id) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+# -------------------------------------------------------------------------
+# END - TABLE: ry_qst_images_html
+# -------------------------------------------------------------------------
+
 
 
 1;

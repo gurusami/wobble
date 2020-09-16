@@ -98,9 +98,9 @@ sub PROCESS {
 	    # All data has been collected. Now save it in database.
 
 	    $DBH->begin_work() or die $DBH->errstr;
-	    $SESSION{'qid'} = insert_question_type1($DBH, $SESSION{'userid'}, $quest, $qst_html);
+	    $SESSION{'qid'} = insert_question_type1($DBH, $SESSION{'userid'}, $quest, $qst_html, $SESSION{'ref_id'});
 	    insert_choices($DBH, $SESSION{'qid'}, \@choices, \@choices_html, \@answers);
-	    $SESSION{'ref_id'} = insert_qid_ref_2($DBH, $SESSION{'qid'}, $FORM{'ref_id'});
+	    # $SESSION{'ref_id'} = insert_qid_ref_2($DBH, $SESSION{'qid'}, $FORM{'ref_id'});
 	    $DBH->commit() or die $DBH->errstr();
 	}
 
@@ -174,22 +174,22 @@ sub DISPLAY {
 
     top_menu($SESSION{'sid'});
 
-    print "<h1>Add an MCQ (Question of Type 1)</h1>";
-    
-    print "<form action=\"addmcq.pl\" method=\"POST\">\n";
-
-    print q{<table>};
+    print qq{
+<h1> Add an MCQ (Question of Type 1) </h1>
+<form action="addmcq.pl?sid=$SESSION{'qid'}" method="POST">
+<table>
+};
 
     # ROW
-    if (defined $SESSION{'qid'}) {
-	my $qs=qq[tinker.pl?sid=$SESSION{'sid'}&qid=$SESSION{'qid'}];
-	my $note_qs=qq[notes.pl?sid=$SESSION{'sid'}&qid=$SESSION{'qid'}];
-	print q{<tr>};
-	print q{<td>Question ID</td>};
-	print q{<td>} . $SESSION{'qid'} . qq{[<a href="$qs">Tinker</a>] [ <a href="$note_qs">Add Note</a> ] </td>};
-	print q{<td></td>};
-	print q{</tr>};
-    }
+if (defined $SESSION{'qid'}) {
+    my $qs=qq[tinker.pl?sid=$SESSION{'sid'}&qid=$SESSION{'qid'}];
+    my $note_qs=qq[notes.pl?sid=$SESSION{'sid'}&qid=$SESSION{'qid'}];
+    print q{<tr>};
+    print q{<td>Question ID</td>};
+    print q{<td>} . $SESSION{'qid'} . qq{[<a href="$qs">Tinker</a>] [ <a href="$note_qs">Add Note</a> ] </td>};
+    print q{<td></td>};
+    print q{</tr>};
+}
 
     # ROW
     print q{<tr>};
@@ -239,11 +239,15 @@ sub DISPLAY {
 	$FORM{'ref_id'} = "";
     }
     
-    print q{<tr>};
-    print q{<td> Reference </td>};
-    print qq{<td> <input type="number" name="ref_id" value="$SESSION{'ref_id'}" /> </td>};
-    print q{</tr>};
-    print q{</table>};
+    my $selref = html_select_refs($DBH, "ref_id");
+
+    print qq{
+<tr>
+    <td> Source Reference </td>
+    <td> $selref; </td>
+</tr>
+</table>
+};
 
     print qq[<input type="hidden" name="n_choices" value="$FORM{'n_choices'}" />];
     print qq[<input type="hidden" name="userid" value="$SESSION{'userid'}" />];

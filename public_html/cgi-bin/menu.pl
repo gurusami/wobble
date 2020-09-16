@@ -58,7 +58,7 @@ sub MAIN {
     
     print "<ul>";
     IF_AUTH_LINK("browse.pl", "Browse Questions");
-    IF_AUTH_LINK("addmcq.pl", "Add Type 1 Question (MCQ)");
+    # IF_AUTH_LINK("addmcq.pl", "Add Type 1 Question (MCQ)");
     IF_AUTH_LINK("tinker.pl", "Tinker a Question");
     IF_AUTH_LINK("biblio.pl", "Register a Reference/Bibliography");
     IF_AUTH_LINK("create-test.pl", "Create a New Test");
@@ -69,6 +69,7 @@ sub MAIN {
     IF_AUTH_LINK("test-reports.pl", "My Test Reports");
     IF_AUTH_LINK("note-edit.pl", "Edit a Note");
     IF_AUTH_LINK("image-upload.pl", "Upload an image");
+    IF_AUTH_LINK("image-view.pl", "View an image");
     print "</ul>";
     print "</body>";
 

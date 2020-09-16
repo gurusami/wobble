@@ -42,19 +42,17 @@ my %FORM;
 my %SESSION;
 my $DBH;
 
-# The question identifier (qid).
-my $qid = 0;
-
 sub display_top {
-    print q[<div class="top"> ];
+    print q[<div class="grid-container"> ];
     display_tinker_form();
     display_add_question_form();
-    print q[</div> <!-- class="top" -->];
+    display_create_given_qid();
+    print q[</div> <!-- class="grid-container" -->];
 };
 
 sub display_add_question_form {
     print qq{
-    <div>
+    <div class="obtain_qid_form">
     <form action="tinker.pl" method="POST">
 	<input type="hidden" name="sid" value="$SESSION{'sid'}" />
 	<input type="submit" name="add_new_question" value=\"Add New Question\" />
@@ -65,8 +63,8 @@ sub display_add_question_form {
 
 sub display_tinker_form {
     print qq{
-    <div style="text-width: 50%">
-    <form action="tinker.pl" method="POST">
+    <div class="obtain_qid_form">
+    <form action="tinker.pl?sid=$SESSION{'sid'}" method="POST">
 	<input type="number" name="qid" />
 	<input type="hidden" name="sid" value="$SESSION{'sid'}" />
 	<input type="submit" name="form_tinker" value=\"Tinker\" />
@@ -75,15 +73,30 @@ sub display_tinker_form {
     };
 }
 
+sub display_create_given_qid {
+    print qq{
+<div class="obtain_qid_form">
+    <form action="tinker.pl?sid=$SESSION{'sid'}" method="POST">
+        <input type="number" name="qid" />
+        <input type="hidden" name="sid" value="$SESSION{'sid'}" />
+        <input type="submit" name="create_given_qid" value="Create QID" />
+	</form>
+</div>
+    };
+}
+
 sub display_add_reference {
     print qq[
     <form action="tinker.pl" method="post">
     <input type="hidden" name="sid" value="$SESSION{'sid'}" />
-    <input type="hidden" name="qid" value="$qid" />
-    <input type="number" name="ref_id" />
-    <input type="submit" name="add_ref" value="Add Reference"/>
-    </form>
-	];
+    <input type="hidden" name="qid" value="$FORM{'qid'}" />];
+    select_refs($DBH, "ref_id");
+
+    print q{
+<input type="submit" name="add_ref" value="Add Reference"/>
+</form>
+};
+
 };
 
 sub display_references {
@@ -92,9 +105,10 @@ sub display_references {
     my $query = "SELECT bib.ref_id, bib.ref_author, bib.ref_title FROM ry_biblio bib, ry_qid_ref ref WHERE ref.qid = ? AND ref.ref_id = bib.ref_id ORDER BY bib.ref_id";
 
     my $stmt = $dbh->prepare($query);
-    $stmt->execute($qid);
+    $stmt->execute($FORM{'qid'});
 
-    print q[<h2> References </h2>];
+    print q[<h2> Other References </h2>];
+
     print q[<ul>];
     while (my $row_href = $stmt->fetchrow_hashref()) {
 	# print_hash($row_href);
@@ -107,7 +121,6 @@ sub display_references {
 sub COLLECT {
     my $form_href = collect_data();
     %FORM = %{$form_href};
-    $qid = $FORM{'qid'};
 }
 
 # sub get_answers {
@@ -139,39 +152,32 @@ sub DTOR {
 }
 
 
-sub handle_all_forms {
-    my $dbh = shift;
-    my $form_href = shift;
-
-    my %FORM = %{$form_href};
-
-    if ($FORM{'UpdateAnswer0'} && ($FORM{'UpdateAnswer0'} eq "Update")) {
-	update_answer_0($dbh, $FORM{qid}, $FORM{qans});
-    } elsif ($FORM{'UpdateQuestion'} && ($FORM{'UpdateQuestion'} eq "Update")) {
-	update_question($dbh, $form_href);
-    } elsif ($FORM{'UpdateAnswer1'} && ($FORM{'UpdateAnswer1'} eq "Update")) {
-	update_answer_1($dbh, $form_href);
-    } elsif ($FORM{'add_new_question'} && ($FORM{'add_new_question'} eq "Add New Question")) {
-	my $qid = insert_question($dbh);
-	$FORM{'qid'} = $qid;
-    } elsif ($FORM{'add_choice'} && ($FORM{'add_choice'} eq "Add Choice")) {
-	insert_answer_1($dbh, $form_href);
-    } elsif ($FORM{'add_child_question'} && ($FORM{'add_child_question'} eq "Add Child Question")) {
-	insert_child_question($dbh, $FORM{'parent_qid'});
-    } elsif ($FORM{'visit_parent'} && ($FORM{'visit_parent'} eq "Visit Parent")) {
-	# The qid has been updated.  Nothing else to do.
-    } elsif ($FORM{'add_ref'} && ($FORM{'add_ref'} eq "Add Reference")) {
-	insert_qid_ref($dbh, $form_href);
-    }
-
-    return \%FORM;
-};
-
 sub PROCESS {
+    my $form_href = \%FORM;
+    # Process the submitted data.
     if ($ENV{'REQUEST_METHOD'} eq "POST") {
-	# Process the submitted data.
-	my $form_href = handle_all_forms($DBH, \%FORM);
-	%FORM = %{$form_href};
+
+        if (defined $FORM{'create_given_qid'}) {
+            # We need to create the given qid.
+            insert_question_withqid($DBH, $FORM{'qid'}, $SESSION{'userid'});
+
+        } elsif ($FORM{'UpdateAnswer0'} && ($FORM{'UpdateAnswer0'} eq "Update")) {
+            update_answer_0($DBH, $FORM{qid}, $FORM{qans});
+        } elsif ($FORM{'UpdateQuestion'} && ($FORM{'UpdateQuestion'} eq "Update")) {
+            update_question($DBH, $form_href);
+        } elsif ($FORM{'UpdateAnswer1'} && ($FORM{'UpdateAnswer1'} eq "Update")) {
+            update_answer_1($DBH, $form_href);
+        } elsif ($FORM{'add_new_question'} && ($FORM{'add_new_question'} eq "Add New Question")) {
+            $FORM{'qid'} = insert_question($DBH, $SESSION{'userid'});
+        } elsif ($FORM{'add_choice'} && ($FORM{'add_choice'} eq "Add Choice")) {
+            insert_answer_1($DBH, $form_href);
+        } elsif ($FORM{'add_child_question'} && ($FORM{'add_child_question'} eq "Add Child Question")) {
+            insert_child_question($DBH, $FORM{'parent_qid'});
+        } elsif ($FORM{'visit_parent'} && ($FORM{'visit_parent'} eq "Visit Parent")) {
+        # The qid has been updated.  Nothing else to do.
+        } elsif ($FORM{'add_ref'} && ($FORM{'add_ref'} eq "Add Reference")) {
+            insert_qid_ref($DBH, $form_href);
+        }
     }
 }
 
@@ -196,12 +202,13 @@ sub DISPLAY {
     my $answer0_row_href;
     my $qrow_href;
     my %QROW;
-
-    $qid = $FORM{'qid'};
+    my $qid = $FORM{'qid'};
 
     # Collect Data that is to be used for display.
     # TODO: Data is to be collected based on what is to be displayed.
     # I think it is better if each data is collected by its display unit.
+
+    # print_hash(\%FORM);
 
     if (defined $qid && $qid > 0) {
 	$qrow_href = select_question($DBH, $qid);
@@ -224,8 +231,11 @@ sub DISPLAY {
 
     display_log();
 
-    if (defined $qid && $qid > 0) {
-	display_question($qrow_href, $SESSION{'sid'});
+    if (defined $FORM{'qid'} && $FORM{'qid'} > 0) {
+        display_question($DBH, $qrow_href, $SESSION{'sid'});
+        display_question_images($DBH, $FORM{'qid'}, $SESSION{'sid'});
+
+        display_choices($DBH, $FORM{'qid'});
 
 	if (defined $qrow_href) {
 	    if (defined $QROW{'qtype'} && $QROW{'qtype'} == 0) {

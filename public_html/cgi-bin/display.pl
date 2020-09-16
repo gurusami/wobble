@@ -28,66 +28,112 @@ sub display_log {
     }
 }
 
+sub display_question_images {
+    my $dbh = shift;
+    my $qid = shift;
+    my $sid = shift;
+
+    print qq{
+<div class="question_images">
+    <h2> Images in Question </h2>
+    <form action="image-addq.pl?sid=$sid" method="post">
+        <input type="hidden" name="sid" value="$sid" />
+        <input type="hidden" name="qid" value="$qid" />
+        <input type="submit" name="add_image_to_q" value="Add Images" />
+    </form>
+</div>
+};
+
+}
+
+# Display a question in the Tinker interface.
 sub display_question {
+    my $dbh = shift;
     my $row_href = shift;
     my $sid = shift;
-    
+
     if (! defined $row_href) {
-	return "false";
+        print qq{<p> Question with given QID not found. </p>};
+        die "Row from question table NOT available";
     }
-    
+
     my %ROW = %{$row_href};
 
     my $checked = "";
     my $qtype;
 
     if (defined $ROW{'qtype'}) {
-	$qtype = $ROW{'qtype'};
+        $qtype = $ROW{'qtype'};
     } else {
-	$qtype = "";
+        $qtype = "";
     }
 
     if (! defined $ROW{'qparent'}) {
-	$ROW{'qparent'} = "";
+        $ROW{'qparent'} = "";
     }
 
+
+    my $html_qsrc = html_select_refs($dbh, "qsrc_ref", $ROW{'qsrc_ref'});
+
     print qq{
-    <div>
-	<h2> Question Details </h2>
-	<form action="tinker.pl" method="post">
-	<table>
+        <div class="question">
+            <h2> Question </h2>
+            <p> $ROW{'qhtml'} </p>
+        </div>
 
-	<tr>
-	<td> Question Identifier </td>
-	<td> <input type="number" name="qid" value="$ROW{qid}" readonly/> </td>
-	</tr>
+        <div class="question">
+            <h2> Modify Question </h2>
+            <form action="tinker.pl?sid=$sid" method="post">
+            <table align="center">
 
-	<tr>
-	<td> Parent Question Identifier </td>
-	<td> <input type="number" name="qparent" value="$ROW{qparent}" readonly/> </td>
-	</tr>
+            <tr>
+            <td> Question Identifier </td>
+            <td> <input type="number" name="qid" value="$ROW{qid}" readonly/> </td>
+            </tr>
 
-	<tr>
-	<td> <p> Question (in LaTeX format) </p> </td>
-	<td> <textarea name="question" cols="80" rows="10">$ROW{'qlatex'}</textarea> </td>
-	</tr>
+            <tr>
+            <td> Parent Question Identifier </td>
+            <td> <input type="number" name="qparent" value="$ROW{qparent}" readonly/> </td>
+            </tr>
 
-	<tr>
-	<td> <p> Question (in HTML format) </p> </td>
-	<td> <textarea name="qhtml" cols="80" rows="10">$ROW{'qhtml'}</textarea> </td>
-	</tr>
-	
-	
-	<tr>
-	<td> Question Type </td>
-	<td> <input type="number" name="qtype" value="$qtype" /> </td>
-	</tr>
+            <tr>
+            <td> <p> Question (in LaTeX format) </p> </td>
+            <td> <textarea name="question" cols="80" rows="10">$ROW{'qlatex'}</textarea> </td>
+            </tr>
 
-	</table>
-	<input type="hidden" name="sid" value="$sid" />
-	<input type="submit" name="UpdateQuestion" value="Update" />
-	</form>
-	</div>
+            <tr>
+            <td> <p> Question (in HTML format) </p> </td>
+            <td> <textarea name="qhtml" cols="80" rows="10">$ROW{'qhtml'}</textarea> </td>
+            </tr>
+
+            <tr>
+            <td> Question Type </td>
+            <td> <input type="number" name="qtype" value="$qtype" /> </td>
+            </tr>
+
+    <tr>
+        <td> Question Has Images (HTML) </td>
+        <td>
+            <select name="has_images" selected="$ROW{'qhtml_img'}">
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+            </select>
+        </td>
+    </tr>
+
+    <tr>
+        <td> Source Reference </td>
+        <td> $html_qsrc </td>
+    </tr>
+
+            </table>
+
+<p>
+    <input type="hidden" name="sid" value="$sid" />
+    <input type="submit" name="UpdateQuestion" value="Update" />
+</p>
+            </form>
+            </div>
     };
 }
 
@@ -151,56 +197,103 @@ sub display_answer_1 {
     my @rows = @{$rows_aref};
 
     print qq{
-	<form action="tinker.pl" method="post">
-	<table>
-	    <tr> <th> Select </th> <th> Choice (LaTeX) </th> <th> Choice (HTML) </th> </tr>
+        <form action="tinker.pl" method="post">
+            <table>
+            <tr> <th> Select </th> <th> Choice (LaTeX) </th> <th> Choice (HTML) </th> </tr>
     };
 
     my $iter = 1;
     foreach my $row_href (@rows) {
-	my %row = %{$row_href};
+        my %row = %{$row_href};
 
-	my $choice_name = "choice_" . $iter;
-	my $choice_name_html = "choice_html_" . $iter;
-	my $choice_id = $row{'chid'};
-	my $correct = $row{'correct'};
-	my $checked;
+        my $choice_name = "choice_" . $iter;
+        my $choice_name_html = "choice_html_" . $iter;
+        my $choice_id = $row{'chid'};
+        my $correct = $row{'correct'};
+        my $checked;
 
-	if ($correct) {
-	    $checked = "checked=true";
-	} else {
-	    $checked = "";
-	}
-	
-	print qq{
-	<tr>
-	    <td> <input type="radio" name="choice_radio" value="$choice_id" $checked/> </td>
-	    <td> <input type="text" name="$choice_name" value="$row{'choice_latex'}" /> </td>
-	    <td> <input type="text" name="$choice_name_html" value="$row{'choice_html'}" /> </td>
-	    </tr>
-	};
+        if ($correct) {
+            $checked = "checked=true";
+        } else {
+            $checked = "";
+        }
 
-	$iter++;
+        print qq{
+            <tr>
+                <td> <input type="radio" name="choice_radio" value="$choice_id" $checked/> </td>
+                <td> <input type="text" size="80" name="$choice_name" value="$row{'choice_latex'}" /> </td>
+                <td> <input type="text" size="80" name="$choice_name_html" value="$row{'choice_html'}" /> </td>
+                </tr>
+        };
+
+        $iter++;
     }
-    
+
+    print qq{
+        </table>
+            <input type="hidden" name="sid" value="$sid" />
+            <input type="hidden" name="qid" value="$qid" />
+            <input type="submit" name="UpdateAnswer1" value="Update" />
+            </form>
+    };
+
+# Add an option to add a choice.  New form!
+    print qq{
+        <form action="tinker.pl" method="post">
+            <input type="hidden" name="sid" value="$sid" />
+            <input type="hidden" name="qid" value="$qid" />
+            <input type="hidden" name="chid" value="$iter" />
+            <input type="text" name="the_choice" />
+            <input type="submit" name="add_choice" value="Add Choice"/>
+            </form>
+    };
+}
+
+sub display_choices {
+    my $dbh = shift;
+    my $qid = shift;
+
+    my $rows_aref = select_answer_1($dbh, $qid);
+
+    my @rows = @{$rows_aref};
+
+    print qq{
+<div>
+    <h2> Available Choices </h2>
+
+    <table>
+        <tr> <th> C No </th> <th> Choice (LaTeX) </th> <th> Choice (HTML) </th> </tr>
+    };
+
+    my $iter = 1;
+    foreach my $row_href (@rows) {
+        my %row = %{$row_href};
+
+        my $choice_name = "choice_" . $iter;
+        my $choice_name_html = "choice_html_" . $iter;
+        my $choice_id = $row{'chid'};
+        my $correct = $row{'correct'};
+        my $border = "none";
+
+        if ($correct) {
+            $border = "1px solid";
+        } 
+
+        print qq{
+        <tr> 
+            <td style="border: $border;"> $iter </td>
+            <td> $row{'choice_latex'} </td>
+            <td> $row{'choice_html'} </td>
+        </tr>
+        };
+
+        $iter++;
+    }
+
     print qq{
     </table>
-	<input type="hidden" name="sid" value="$sid" />
-	<input type="hidden" name="qid" value="$qid" />
-	<input type="submit" name="UpdateAnswer1" value="Update" />
-	</form>
-    };
-
-    # Add an option to add a choice.  New form!
-    print qq{
-    <form action="tinker.pl" method="post">
-	<input type="hidden" name="sid" value="$sid" />
-	<input type="hidden" name="qid" value="$qid" />
-	<input type="hidden" name="chid" value="$iter" />
-	<input type="text" name="the_choice" />
-	<input type="submit" name="add_choice" value="Add Choice"/>
-	</form>
-    };
+</div>
+};
 }
 
 sub display_error {
