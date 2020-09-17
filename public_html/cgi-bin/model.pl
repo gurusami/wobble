@@ -1,4 +1,6 @@
 #!/usr/bin/perl
+# Created: Thu 17 Sep 2020 04:33:53 PM IST
+# Last-Updated: Thu 17 Sep 2020 04:33:53 PM IST
 # Time-stamp: <2020-09-12 11:06:30 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
@@ -312,22 +314,27 @@ sub insert_biblio {
     my %FORM = %{$form_href};
 
     my $ins_query = "INSERT INTO ry_biblio (ref_nick, ref_type, ref_author, " .
-	"ref_series, ref_title, ref_isbn10, ref_isbn13, ref_year, ref_publisher, " .
-	"ref_keywords, ref_url, ref_accessed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        "ref_series, ref_title, ref_isbn10, ref_isbn13, ref_year, ref_publisher, " .
+        "ref_keywords, ref_url, ref_accessed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     my $ref_nick;
 
     my $accessed;
 
     if (defined $FORM{'ref_accessed'} && length($FORM{'ref_accessed'}) > 0) {
-	$accessed = $FORM{'ref_accessed'};
+        $accessed = $FORM{'ref_accessed'};
     }
-    my $stmt = $dbh->prepare($ins_query);
+    my $stmt = $dbh->prepare($ins_query) or die $dbh->errstr();
+
+    if (defined $FORM{'ref_year'} && $FORM{'ref_year'} eq "") {
+        undef $FORM{'ref_year'};
+    }
+
     $stmt->execute($FORM{'ref_nick'}, $FORM{'ref_type'}, $FORM{'ref_author'}, 
-		   $FORM{'ref_series'}, $FORM{'ref_title'}, $FORM{'ref_isbn10'},
-		   $FORM{'ref_isbn13'}, $FORM{'ref_year'}, $FORM{'ref_publisher'}, 
-		   $FORM{'ref_keywords'}, $FORM{'ref_url'}, $accessed)
-	or return undef;
+            $FORM{'ref_series'}, $FORM{'ref_title'}, $FORM{'ref_isbn10'},
+            $FORM{'ref_isbn13'}, $FORM{'ref_year'}, $FORM{'ref_publisher'}, 
+            $FORM{'ref_keywords'}, $FORM{'ref_url'}, $accessed)
+        or die $dbh->errstr();
     $stmt->finish();
 
     return last_insert_id($dbh);

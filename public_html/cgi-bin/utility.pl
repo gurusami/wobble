@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # Created: Mon 14 Sep 2020 10:39:48 PM IST
-# Last Modified: Wed 16 Sep 2020 04:38:18 PM IST
+# Last Modified: Thu 17 Sep 2020 04:29:49 PM IST
 # Time-stamp: <2020-09-10 06:27:50 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
@@ -293,16 +293,9 @@ $image
 sub select_refs {
     my $dbh = shift;
     my $name = shift;
-
-    my $query = "SELECT ref_id, ref_title FROM ry_biblio";
-    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
-    $stmt->execute() or die $dbh->errstr();
-
-    print qq{<select name="$name">};
-    while (my ($ref_id, $ref_title) = $stmt->fetchrow()) {
-        print qq{<option value="$ref_id"> $ref_title </option>};
-    }
-    print qq{</select>};
+    my $ref_id_selected = shift;
+    my $html = html_select_refs($dbh, $name, $ref_id_selected);
+    print $html;
 }
 
 sub html_select_refs {
@@ -316,6 +309,10 @@ sub html_select_refs {
     $stmt->execute() or die $dbh->errstr();
 
     $html = qq{<select name="$name">};
+
+    if (! defined $ref_id_selected) {
+        $html = $html . qq{<option value="0"> (empty) </option>};
+    }
 
     while (my ($ref_id, $ref_title) = $stmt->fetchrow()) {
         my $sel = "";

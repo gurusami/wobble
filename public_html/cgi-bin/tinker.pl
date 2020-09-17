@@ -233,7 +233,11 @@ sub DISPLAY {
 
     if (defined $FORM{'qid'} && $FORM{'qid'} > 0) {
         display_question($DBH, $qrow_href, $SESSION{'sid'});
-        display_question_images($DBH, $FORM{'qid'}, $SESSION{'sid'});
+
+        if ($QROW{'qhtml_img'} == 1) {
+            # Display the images section only if the question has images.
+            display_question_images($DBH, $FORM{'qid'}, $SESSION{'sid'});
+        }
 
         display_choices($DBH, $FORM{'qid'});
 
