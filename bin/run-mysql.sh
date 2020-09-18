@@ -1,6 +1,6 @@
 #!/bin/bash
 # Created: Thu 17 Sep 2020 11:51:19 AM IST
-# Last-Modified: Thu 17 Sep 2020 11:51:48 AM IST
+# Last-Modified: Fri 18 Sep 2020 09:34:47 AM IST
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 #
 
@@ -9,4 +9,4 @@ DD=/home/annamalai/i/my_data
 LF=$DD/mysql.log
 cnf="/home/annamalai/wobble.git/conf/my.cnf"
 
-$BD/bin/mysqld --defaults-file="$cnf" --basedir=$BD --datadir=$DD --log-error=$LF --user=`whoami` --console --max_allowed_packet=500M --lc-messages-dir=./sql/share
+$BD/bin/mysqld --defaults-file="$cnf" --basedir=$BD --log-error=$LF --user=`whoami` --console --max_allowed_packet=500M --lc-messages-dir=./sql/share

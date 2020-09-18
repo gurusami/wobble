@@ -137,7 +137,7 @@ sub print_question_0 {
     print $ofh qq{[QID:$qid]};
 
     if ($with_answer) {
-	my $query = "SELECT qid, qans FROM answer_0 WHERE qid = ?";
+	my $query = "SELECT qid, qans FROM answer_1 WHERE qid = ?";
 	my $stmt = $DBH->prepare($query) or die $DBH->errstr();
 	$stmt->execute($qid);
 	my ($qid, $qans) = $stmt->fetchrow();
@@ -172,7 +172,7 @@ sub print_question_1 {
 
     newline();
     
-    my $query = "SELECT qid, chid, choice_latex, correct FROM answer_1 WHERE qid = ?";
+    my $query = "SELECT qid, chid, choice_latex, correct FROM answer_2 WHERE qid = ?";
 
     my $stmt = $DBH->prepare($query);
     $stmt->execute($qid);

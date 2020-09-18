@@ -35,7 +35,7 @@ my $t_users = 'ry_users';
 my $t_sessions = 'ry_sessions';
 
 my %TABLE = (
-    answer_1 => 'answer_1',
+    answer_2 => 'answer_2',
     question => 'question',
     qid_ref  => 'ry_qid_ref',
     tests    => 'ry_tests',
@@ -158,11 +158,11 @@ sub update_question {
 # END TABLE: question
 # -------------------------------------------------------------------------
 
-sub select_answer_0 {
+sub select_answer_1 {
     my $dbh = shift;
     my $qid = shift;
 
-    my $query = "SELECT qid, qans FROM answer_0 WHERE qid = ?";
+    my $query = "SELECT qid, qans FROM answer_1 WHERE qid = ?";
     my $stmt = $dbh->prepare($query);
     $stmt->execute($qid);
     my $row = $stmt->fetchrow_hashref();
@@ -170,35 +170,48 @@ sub select_answer_0 {
     return $row;
 }
 
-sub insert_answer_0 {
+sub validate_answer_1 {
+    my $dbh = shift;
+    my $qid = shift;
+    my $given = shift;
+
+    my $query = "SELECT qans FROM answer_1 WHERE qid = ?";
+    my $stmt = $dbh->prepare($query);
+    $stmt->execute($qid);
+    my ($answer) = $stmt->fetchrow();
+    $stmt->finish();
+    return ($answer == $given);
+}
+
+sub insert_answer_1 {
     my $dbh = shift;
     my $qid = shift;
 
-    my $query = "INSERT INTO answer_0 (qid) VALUES (?)";
+    my $query = "INSERT INTO answer_1 (qid) VALUES (?)";
     my $stmt = $dbh->prepare($query);
     $stmt->execute($qid);
     $stmt->finish();
 }
 
-sub update_answer_0 {
+sub update_answer_1 {
     my $dbh = shift;
     my $qid = shift;
     my $ans = shift;
 
-    my $query = "UPDATE answer_0 SET qans = ? WHERE qid = ?";
+    my $query = "UPDATE answer_1 SET qans = ? WHERE qid = ?";
     my $stmt = $dbh->prepare($query);
     $stmt->execute($ans, $qid);
     $stmt->finish();
 }
 
 # -------------------------------------------------------------------------
-# BEGIN: TABLE answer_1
+# BEGIN: TABLE answer_2
 # This returns an array of rows. 
-sub select_answer_1 {
+sub select_answer_2 {
     my $dbh = shift;
     my $qid = shift;
 
-    my $query = "SELECT qid, chid, choice_latex, choice_html, correct FROM answer_1 WHERE qid = ?";
+    my $query = "SELECT qid, chid, choice_latex, choice_html, correct FROM answer_2 WHERE qid = ?";
     my $stmt = $dbh->prepare($query);
     $stmt->execute($qid) or return undef;
     my @rows_aref;
@@ -211,11 +224,11 @@ sub select_answer_1 {
     return \@rows_aref;
 }
 
-sub get_correct_answer_1 {
+sub get_correct_answer_2 {
     my $dbh = shift;
     my $qid = shift;
 
-    my $query = "SELECT chid FROM answer_1 WHERE qid = ? AND correct = true";
+    my $query = "SELECT chid FROM answer_2 WHERE qid = ? AND correct = true";
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
     $stmt->execute($qid) or die $dbh->errstr();
     my ($correct_choice) = $stmt->fetchrow();
@@ -223,28 +236,42 @@ sub get_correct_answer_1 {
     return $correct_choice;
 }
 
-sub insert_answer_1 {
+sub validate_answer_2 {
+    my $dbh = shift;
+    my $qid = shift;
+    my $given = shift;
+
+    my $query = "SELECT chid FROM answer_2 WHERE qid = ? AND correct = true";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($qid) or die $dbh->errstr();
+    my ($correct_choice) = $stmt->fetchrow();
+    $stmt->finish();
+    return ($correct_choice == $given);
+}
+
+sub insert_answer_2 {
     my $dbh = shift;
     my $form_href = shift;
     my %FORM = %{$form_href};
 
     my $qid = $FORM{'qid'};
     my $chid = $FORM{'chid'};
-    my $choice = $FORM{'the_choice'};
+    my $choice_latex = $FORM{'choice_latex'};
+    my $choice_html = $FORM{'choice_html'};
     
-    my $query = "INSERT INTO answer_1 (qid, chid, choice_latex, correct) VALUES (?, ?, ?, ?)";
+    my $query = "INSERT INTO answer_2 (qid, chid, choice_latex, choice_html, correct) VALUES (?, ?, ?, ?, ?)";
     my $stmt = $dbh->prepare($query);
-    $stmt->execute($qid, $chid, $choice, 0);
+    $stmt->execute($qid, $chid, $choice_latex, $choice_html, 0);
     $stmt->finish();
 }
 
-sub update_answer_1 {
+sub update_answer_2 {
     my $dbh = shift;
     my $form_href = shift;
     my %FORM = %{$form_href};
 
     my $qid = $FORM{'qid'};
-    my $query = "UPDATE answer_1 SET choice_html = ?, choice_latex = ?, correct = ? WHERE qid = ? AND chid = ?";
+    my $query = "UPDATE answer_2 SET choice_html = ?, choice_latex = ?, correct = ? WHERE qid = ? AND chid = ?";
     my $stmt = $dbh->prepare($query);
     my $correct_choice = $FORM{'choice_radio'};
     
@@ -286,7 +313,7 @@ sub insert_choices {
     my @choices_html = @{$choices_html_aref};
     my @answers = @{$answers_aref};
     
-    my $query = "INSERT INTO $TABLE{'answer_1'} (qid, chid, choice_latex, choice_html, correct) VALUES ($qid, ?, ?, ?, ?)";
+    my $query = "INSERT INTO $TABLE{'answer_2'} (qid, chid, choice_latex, choice_html, correct) VALUES ($qid, ?, ?, ?, ?)";
     my $rv;
 
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
@@ -303,7 +330,7 @@ sub insert_choices {
     return $rv;
 }
 
-# END: TABLE answer_1
+# END: TABLE answer_2
 # -------------------------------------------------------------------------
 
 # TABLE: ry_biblio
@@ -709,25 +736,68 @@ sub prepare_test_attempt {
     my @qids = @{$qid_aref};
 
     foreach my $qid (@qids) {
-	$stmt->execute($userid, $tst_id, $qid) or die $dbh->errstr();
+        $stmt->execute($userid, $tst_id, $qid) or die $dbh->errstr();
     }
 
     $stmt->finish();
 }
 
-sub give_answer {
+sub check_attempt {
     my $dbh = shift;
-    my $choice = shift;
     my $userid = shift;
     my $tst_id = shift;
     my $qid = shift;
+
+    my $query = "SELECT COUNT(*) FROM ry_test_attempts WHERE att_userid = ? AND att_tst_id = ? AND att_qid = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $qid) or die $dbh->errstr();
+    my ($N) = $stmt->fetchrow();
+    $stmt->finish();
+    return $N;
+}
+
+sub insert_attempt_answer {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+    my $given = shift;
+
+    my $query = q{INSERT INTO ry_test_attempts (att_userid, att_tst_id, att_qid, att_given) VALUES (?, ?, ?, ?)};
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $qid, $given) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub give_answer {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+    my $given = shift;
+
+    my $exists = check_attempt($dbh, $userid, $tst_id, $qid);
+
+    if ($exists == 1) {
+        update_attempt_answer($dbh, $userid, $tst_id, $qid, $given);
+    } else {
+        insert_attempt_answer($dbh, $userid, $tst_id, $qid, $given);
+    }
+}
+
+sub update_attempt_answer {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+    my $given = shift;
     
     my $query = q{UPDATE ry_test_attempts
 		      SET att_given = ?, att_when = current_timestamp
 		      WHERE att_userid = ? AND att_tst_id = ? 
 		      AND att_qid = ?};
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
-    $stmt->execute($choice, $userid, $tst_id, $qid) or die $dbh->errstr();
+    $stmt->execute($given, $userid, $tst_id, $qid) or die $dbh->errstr();
     $stmt->finish();
 }
 
@@ -747,6 +817,45 @@ sub fetch_user_given_answer {
     my ($given) = $stmt->fetchrow();
     $stmt->finish();
     return $given;
+}
+
+sub get_correct_count {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+
+    my $query = "SELECT COUNT(*) FROM ry_test_attempts WHERE att_userid = ? AND att_tst_id = ? AND att_result is TRUE";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id) or die $dbh->errstr();
+    my ($correct) = $stmt->fetchrow();
+    $stmt->finish();
+    return $correct;
+}
+
+sub get_skipped_count {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+
+    my $query = "SELECT COUNT(*) FROM ry_test_attempts WHERE att_userid = ? AND att_tst_id = ? AND att_given IS NULL";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id) or die $dbh->errstr();
+    my ($skipped) = $stmt->fetchrow();
+    $stmt->finish();
+    return $skipped;
+}
+
+sub get_wrong_count {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+
+    my $query = "SELECT COUNT(*) FROM ry_test_attempts WHERE att_userid = ? AND att_tst_id = ? AND att_result IS FALSE";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id) or die $dbh->errstr();
+    my ($N) = $stmt->fetchrow();
+    $stmt->finish();
+    return $N;
 }
 
 # -------------------------------------------------------------------------
@@ -871,7 +980,236 @@ sub add_img_to_qst {
 # -------------------------------------------------------------------------
 # END - TABLE: ry_qst_images_html
 # -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# BEGIN - TABLE: ry_tags
+# -------------------------------------------------------------------------
+
+sub add_tag {
+    my $dbh = shift;
+    my $userid = shift;
+    my $qid = shift;
+    my $tag = shift;
+    my $tagid;
+
+    $dbh->begin_work();    
+    my $tag_row_href = select_tag_row($dbh, $tag);
+
+    if (defined $tag_row_href) {
+        my %ROW = %{$tag_row_href};
+        $tagid = $ROW{'tg_tagid'};
+    } else {
+        $tagid = insert_tag($dbh, $userid, $tag);
+    }
+
+    insert_qst2tag($dbh, $userid, $qid, $tagid);
+    $dbh->commit();    
+}
+
+sub insert_tag {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tag = shift;
+
+    my $query = "INSERT INTO ry_tags (tg_tag, tg_userid) VALUES (?, ?)";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tag, $userid) or die $dbh->errstr();
+    $stmt->finish();
+
+    return last_insert_id($dbh);
+}
+
+sub select_tag_row {
+    my $dbh = shift;
+    my $tag = shift;
+
+    my $query = "SELECT * FROM ry_tags WHERE tg_tag = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tag) or die $dbh->errstr();
+    my $row_href = $stmt->fetchrow_hashref();
+    $stmt->finish();
+    return $row_href;
+}
+
+# -------------------------------------------------------------------------
+# END - TABLE: ry_tags
+# -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# BEGIN - TABLE: ry_qst2tag
+# -------------------------------------------------------------------------
+
+sub insert_qst2tag {
+    my $dbh = shift;
+    my $userid = shift;
+    my $qid = shift;
+    my $tagid = shift;
+
+    my $query = "INSERT INTO ry_qst2tag (q2t_tagid, q2t_qid, q2t_userid) VALUES (?, ?, ?)";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tagid, $qid, $userid) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub tags_for_qst {
+    my $dbh = shift;
+    my $qid = shift;
+    my @tags;
+
+    my $query = "SELECT b.tg_tag FROM ry_qst2tag a, ry_tags b WHERE a.q2t_tagid = b.tg_tagid AND q2t_qid = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($qid) or die $dbh->errstr();
+
+    while (my ($tag) = $stmt->fetchrow()) {
+        push @tags, $tag;
+    }
+
+    $stmt->finish();
+    return \@tags;
+}
+
+# -------------------------------------------------------------------------
+# END - TABLE: ry_qst2tag
+# -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# BEGIN - TABLE: ry_answer_string
+# -------------------------------------------------------------------------
+sub insert_answer_string {
+    my $dbh = shift;
+    my $qid = shift;
+    my $ans = shift;
+
+    my $query = "INSERT INTO ry_answer_string (as_qid, as_ans) VALUES (?, ?)";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($qid, $ans) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub modify_answer_string {
+    my $dbh = shift;
+    my $qid = shift;
+    my $ans = shift;
+
+    my $exists = check_answer_string($dbh, $qid);
+    if ($exists == 0) {
+        insert_answer_string($dbh, $qid, $ans);
+    } else {
+        update_answer_string($dbh, $qid, $ans);
+    }
+}
+
+sub update_answer_string {
+    my $dbh = shift;
+    my $qid = shift;
+    my $ans = shift;
+
+    my $query = "UPDATE ry_answer_string SET as_ans = ? WHERE as_qid = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($ans, $qid) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub select_answer_string {
+    my $dbh = shift;
+    my $qid = shift;
+
+    my $query = "SELECT as_ans FROM ry_answer_string WHERE as_qid = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($qid) or die $dbh->errstr();
+    my ($ans) = $stmt->fetchrow();
+    $stmt->finish();
+    return $ans;
+}
+
+sub check_answer_string {
+    my $dbh = shift;
+    my $qid = shift;
+    my $ans;
+
+    my $query = "SELECT COUNT(*) FROM ry_answer_string WHERE as_qid = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($qid) or die $dbh->errstr();
+    my ($N) = $stmt->fetchrow();
+    $stmt->finish();
+    return $N;
+}
+
+# -------------------------------------------------------------------------
+# END - TABLE: ry_answer_string
+# -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# BEGIN - TABLE: ry_given_string
+# -------------------------------------------------------------------------
+sub insert_user_given_string {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+    my $given = shift;
+
+    my $query = "INSERT INTO ry_given_string (ugs_userid, ugs_tst_id, ugs_qid, ugs_given) VALUES (?, ?, ?, ?)";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $qid, $given) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub select_user_given_string {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+
+    my $query = "SELECT ugs_given FROM ry_given_string WHERE ugs_userid = ? AND ugs_tst_id = ? AND ugs_qid = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $qid) or die $dbh->errstr();
+    my ($given) = $stmt->fetchrow();
+    $stmt->finish();
+    return $given;
+}
+
+sub check_user_given_string {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+
+    my $query = "SELECT COUNT(*) FROM ry_given_string WHERE ugs_userid = ? AND ugs_tst_id = ? AND ugs_qid = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $qid) or die $dbh->errstr();
+    my ($N) = $stmt->fetchrow();
+    $stmt->finish();
+    return $N;
+}
+
+sub update_user_given_string {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+    my $ans = shift;
+
+    my $query = "UPDATE ry_given_string SET ugs_given = ? WHERE ugs_userid = ? AND ugs_tst_id = ? AND ugs_qid = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($ans, $userid, $tst_id, $qid) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub modify_user_given_string {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+    my $given = shift;
+
+    my $exists = check_user_given_string($dbh, $userid, $tst_id, $qid);
+    if ($exists == 0) {
+        insert_user_given_string($dbh, $userid, $tst_id, $qid, $given);
+    } else {
+        update_user_given_string($dbh, $userid, $tst_id, $qid, $given);
+    }
+}
 
 
+# -------------------------------------------------------------------------
+# END - TABLE: ry_given_string
+# -------------------------------------------------------------------------
 
 1;

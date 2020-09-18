@@ -24,20 +24,6 @@ CREATE DATABASE /*!32312 IF NOT EXISTS*/ `rydb` /*!40100 DEFAULT CHARACTER SET u
 USE `rydb`;
 
 --
--- Table structure for table `answer_0`
---
-
-DROP TABLE IF EXISTS `answer_0`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `answer_0` (
-  `qid` int NOT NULL,
-  `qans` int DEFAULT NULL,
-  PRIMARY KEY (`qid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `answer_1`
 --
 
@@ -45,6 +31,21 @@ DROP TABLE IF EXISTS `answer_1`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `answer_1` (
+  `qid` int NOT NULL,
+  `qans` int DEFAULT NULL,
+  PRIMARY KEY (`qid`),
+  CONSTRAINT `answer_1_ibfk_1` FOREIGN KEY (`qid`) REFERENCES `question` (`qid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `answer_2`
+--
+
+DROP TABLE IF EXISTS `answer_2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `answer_2` (
   `qid` int NOT NULL,
   `chid` tinyint NOT NULL COMMENT 'Choice number',
   `choice_latex` text COMMENT 'Choice in LaTeX format',
@@ -76,9 +77,26 @@ CREATE TABLE `question` (
   PRIMARY KEY (`qid`),
   KEY `userid` (`userid`),
   KEY `qsrc_ref` (`qsrc_ref`),
+  KEY `qtype` (`qtype`),
   CONSTRAINT `question_ibfk_1` FOREIGN KEY (`userid`) REFERENCES `ry_users` (`userid`),
-  CONSTRAINT `question_ibfk_2` FOREIGN KEY (`qsrc_ref`) REFERENCES `ry_biblio` (`ref_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=258 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  CONSTRAINT `question_ibfk_2` FOREIGN KEY (`qsrc_ref`) REFERENCES `ry_biblio` (`ref_id`),
+  CONSTRAINT `question_ibfk_3` FOREIGN KEY (`qtype`) REFERENCES `ry_qst_types` (`qst_type_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=271 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ry_answer_string`
+--
+
+DROP TABLE IF EXISTS `ry_answer_string`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ry_answer_string` (
+  `as_qid` int NOT NULL,
+  `as_ans` text NOT NULL,
+  PRIMARY KEY (`as_qid`),
+  CONSTRAINT `ry_answer_string_ibfk_1` FOREIGN KEY (`as_qid`) REFERENCES `question` (`qid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -105,6 +123,29 @@ CREATE TABLE `ry_biblio` (
   PRIMARY KEY (`ref_id`),
   UNIQUE KEY `ref_nick` (`ref_nick`)
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ry_given_string`
+--
+
+DROP TABLE IF EXISTS `ry_given_string`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ry_given_string` (
+  `ugs_userid` int NOT NULL,
+  `ugs_tst_id` int NOT NULL,
+  `ugs_qid` int NOT NULL,
+  `ugs_given` text NOT NULL,
+  `ugs_created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `ugs_updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`ugs_userid`,`ugs_tst_id`,`ugs_qid`),
+  KEY `ugs_tst_id` (`ugs_tst_id`),
+  KEY `ugs_qid` (`ugs_qid`),
+  CONSTRAINT `ry_given_string_ibfk_1` FOREIGN KEY (`ugs_userid`) REFERENCES `ry_users` (`userid`),
+  CONSTRAINT `ry_given_string_ibfk_2` FOREIGN KEY (`ugs_tst_id`) REFERENCES `ry_tests` (`tst_id`),
+  CONSTRAINT `ry_given_string_ibfk_3` FOREIGN KEY (`ugs_qid`) REFERENCES `question` (`qid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -135,6 +176,27 @@ CREATE TABLE `ry_qid_ref` (
   `qid` int NOT NULL,
   `ref_id` int NOT NULL,
   `notes` text
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ry_qst2tag`
+--
+
+DROP TABLE IF EXISTS `ry_qst2tag`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ry_qst2tag` (
+  `q2t_qid` int NOT NULL,
+  `q2t_tagid` int unsigned NOT NULL,
+  `q2t_userid` int NOT NULL,
+  `q2t_created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `q2t_updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`q2t_qid`,`q2t_tagid`),
+  UNIQUE KEY `q2t_tagid` (`q2t_tagid`,`q2t_qid`),
+  KEY `q2t_userid` (`q2t_userid`),
+  CONSTRAINT `ry_qst2tag_ibfk_1` FOREIGN KEY (`q2t_qid`) REFERENCES `question` (`qid`),
+  CONSTRAINT `ry_qst2tag_ibfk_2` FOREIGN KEY (`q2t_userid`) REFERENCES `ry_users` (`userid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -180,23 +242,6 @@ CREATE TABLE `ry_qst_notes` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `ry_qst_to_tag`
---
-
-DROP TABLE IF EXISTS `ry_qst_to_tag`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `ry_qst_to_tag` (
-  `qid` int NOT NULL,
-  `tagid` int unsigned NOT NULL,
-  PRIMARY KEY (`qid`,`tagid`),
-  KEY `tagid` (`tagid`),
-  CONSTRAINT `ry_qst_to_tag_ibfk_1` FOREIGN KEY (`tagid`) REFERENCES `ry_tags` (`tg_tagid`),
-  CONSTRAINT `ry_qst_to_tag_ibfk_2` FOREIGN KEY (`qid`) REFERENCES `question` (`qid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `ry_qst_types`
 --
 
@@ -208,7 +253,7 @@ CREATE TABLE `ry_qst_types` (
   `qst_type_name` char(64) NOT NULL,
   PRIMARY KEY (`qst_type_id`),
   UNIQUE KEY `qst_type_name` (`qst_type_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -244,23 +289,6 @@ CREATE TABLE `ry_sessions` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `ry_tag_to_qst`
---
-
-DROP TABLE IF EXISTS `ry_tag_to_qst`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `ry_tag_to_qst` (
-  `tagid` int unsigned NOT NULL,
-  `qid` int NOT NULL,
-  PRIMARY KEY (`tagid`,`qid`),
-  KEY `qid` (`qid`),
-  CONSTRAINT `ry_tag_to_qst_ibfk_1` FOREIGN KEY (`tagid`) REFERENCES `ry_tags` (`tg_tagid`),
-  CONSTRAINT `ry_tag_to_qst_ibfk_2` FOREIGN KEY (`qid`) REFERENCES `question` (`qid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `ry_tags`
 --
 
@@ -276,7 +304,7 @@ CREATE TABLE `ry_tags` (
   `tg_last_updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`tg_tagid`),
   UNIQUE KEY `tg_tag` (`tg_tag`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -292,6 +320,7 @@ CREATE TABLE `ry_test_attempts` (
   `att_qid` int NOT NULL,
   `att_given` int DEFAULT NULL,
   `att_when` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `att_result` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`att_userid`,`att_tst_id`,`att_qid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -388,7 +417,7 @@ CREATE TABLE `ry_tests` (
   `tst_title` char(128) DEFAULT NULL,
   PRIMARY KEY (`tst_id`),
   UNIQUE KEY `tst_title` (`tst_title`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -418,4 +447,4 @@ CREATE TABLE `ry_users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-09-17 23:48:39
+-- Dump completed on 2020-09-19  0:30:01

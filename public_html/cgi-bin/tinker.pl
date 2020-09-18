@@ -1,5 +1,6 @@
 #!/usr/bin/perl
-#
+# Created: Fri 18 Sep 2020 11:31:17 AM IST
+# Last-Updated: Fri 18 Sep 2020 11:31:17 AM IST
 # Time-stamp: <2020-09-12 10:27:16 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
@@ -99,6 +100,21 @@ sub display_add_reference {
 
 };
 
+sub display_add_tag_form {
+    print qq[
+<div id="add_tag_form">
+    <h2> Add Tag </h2>
+        <form action="tinker.pl?sid=$SESSION{'sid'}" method="post">
+            <input type="hidden" name="sid" value="$SESSION{'sid'}" />
+            <input type="hidden" name="qid" value="$FORM{'qid'}" />
+            <input type="hidden" name="userid" value="$SESSION{'userid'}" />
+            <input type="text" name="tag" size="64" />
+            <input type="submit" name="add_tag" value="Add Tag"/>
+        </form>
+</div> <!-- add_tag_form -->
+];
+}
+
 sub display_references {
     my $dbh = shift;
 
@@ -111,9 +127,9 @@ sub display_references {
 
     print q[<ul>];
     while (my $row_href = $stmt->fetchrow_hashref()) {
-	# print_hash($row_href);
-	my %ROW = %{$row_href};
-	print qq{<li> $ROW{'ref_author'} <cite> $ROW{'ref_title'} </cite> </li> };
+# print_hash($row_href);
+        my %ROW = %{$row_href};
+        print qq{<li> $ROW{'ref_author'} <cite> $ROW{'ref_title'} </cite> </li> };
     }
     print q[</ul>];
 }
@@ -161,22 +177,26 @@ sub PROCESS {
             # We need to create the given qid.
             insert_question_withqid($DBH, $FORM{'qid'}, $SESSION{'userid'});
 
-        } elsif ($FORM{'UpdateAnswer0'} && ($FORM{'UpdateAnswer0'} eq "Update")) {
-            update_answer_0($DBH, $FORM{qid}, $FORM{qans});
+        } elsif ($FORM{'UpdateAnswer1'} && ($FORM{'UpdateAnswer1'} eq "Update")) {
+            update_answer_1($DBH, $FORM{qid}, $FORM{qans});
         } elsif ($FORM{'UpdateQuestion'} && ($FORM{'UpdateQuestion'} eq "Update")) {
             update_question($DBH, $form_href);
-        } elsif ($FORM{'UpdateAnswer1'} && ($FORM{'UpdateAnswer1'} eq "Update")) {
-            update_answer_1($DBH, $form_href);
+        } elsif ($FORM{'UpdateAnswer2'} && ($FORM{'UpdateAnswer2'} eq "Update")) {
+            update_answer_2($DBH, $form_href);
         } elsif ($FORM{'add_new_question'} && ($FORM{'add_new_question'} eq "Add New Question")) {
             $FORM{'qid'} = insert_question($DBH, $SESSION{'userid'});
         } elsif ($FORM{'add_choice'} && ($FORM{'add_choice'} eq "Add Choice")) {
-            insert_answer_1($DBH, $form_href);
+            insert_answer_2($DBH, $form_href);
         } elsif ($FORM{'add_child_question'} && ($FORM{'add_child_question'} eq "Add Child Question")) {
             insert_child_question($DBH, $FORM{'parent_qid'});
         } elsif ($FORM{'visit_parent'} && ($FORM{'visit_parent'} eq "Visit Parent")) {
         # The qid has been updated.  Nothing else to do.
         } elsif ($FORM{'add_ref'} && ($FORM{'add_ref'} eq "Add Reference")) {
             insert_qid_ref($DBH, $form_href);
+        } elsif (defined $FORM{'add_tag'} && ($FORM{'add_tag'} eq "Add Tag")) {
+            add_tag($DBH, $SESSION{'userid'}, $FORM{'qid'}, $FORM{'tag'});
+        } elsif (defined $FORM{'UpdateAnswerString'}) {
+            modify_answer_string($DBH, $FORM{'qid'}, $FORM{'qans'});
         }
     }
 }
@@ -198,8 +218,8 @@ sub DISPLAY {
 
     # At this point we have a valid qid, either old or new.  Lets tinker it!
 
-    # Represents one row in the table answer_0.
-    my $answer0_row_href;
+    # Represents one row in the table answer_1.
+    my $answer1_row_href;
     my $qrow_href;
     my %QROW;
     my $qid = $FORM{'qid'};
@@ -211,18 +231,18 @@ sub DISPLAY {
     # print_hash(\%FORM);
 
     if (defined $qid && $qid > 0) {
-	$qrow_href = select_question($DBH, $qid);
+        $qrow_href = select_question($DBH, $qid);
 
-	if (defined $qrow_href) {
-	    %QROW = %{$qrow_href};
-	    if (defined $QROW{qtype} && $QROW{qtype} == 0) {
-		$answer0_row_href = select_answer_0($DBH, $qid);
-		if (! defined $answer0_row_href) {
-		    insert_answer_0($DBH, $qid);
-		    $answer0_row_href = select_answer_0($DBH, $qid);
-		}
-	    }
-	} 
+        if (defined $qrow_href) {
+            %QROW = %{$qrow_href};
+            if (defined $QROW{qtype} && $QROW{qtype} == 1) {
+                $answer1_row_href = select_answer_1($DBH, $qid);
+                if (! defined $answer1_row_href) {
+                    insert_answer_1($DBH, $qid);
+                    $answer1_row_href = select_answer_1($DBH, $qid);
+                }
+            }
+        } 
     }
 
     display_top();
@@ -241,17 +261,18 @@ sub DISPLAY {
 
         display_choices($DBH, $FORM{'qid'});
 
-	if (defined $qrow_href) {
-	    if (defined $QROW{'qtype'} && $QROW{'qtype'} == 0) {
-		display_answer_0($answer0_row_href);
-	    } else {
-		display_answer($DBH, $SESSION{'sid'}, $qrow_href);
-	    }
-	}
+        if (defined $qrow_href) {
+            if (defined $QROW{'qtype'} && $QROW{'qtype'} == 1) {
+                display_answer_1($SESSION{'sid'}, $answer1_row_href);
+            } else {
+                display_answer($DBH, $SESSION{'sid'}, $qrow_href);
+            }
+        }
 
-	display_parent($DBH, $qrow_href);
-	display_references($DBH);
-	display_add_reference();
+        display_parent($DBH, $qrow_href);
+        display_add_tag_form();
+        display_references($DBH);
+        display_add_reference();
         display_add_note();
     }
 
