@@ -30,3 +30,4 @@ outdir="${PROJ_DIR}/schema/"
 of="$outdir/$outfile"
 
 $BD/bin/mysqldump --no-data --socket=$SF --user=root --password='W3lcome=' --databases rydb > $of
+$BD/bin/mysqldump --socket=$SF --user=root --password='W3lcome=' --databases rydb > ${PROJ_DIR}/rydb/rydb-dump.sql

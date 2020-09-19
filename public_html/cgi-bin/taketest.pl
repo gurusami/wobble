@@ -244,7 +244,7 @@ sub show_textbox_for_answer()
     }
 
     print qq{
-    <input type="number" size="80" name="give_answer_string" value="$given" $readonly/>
+    <input type="text" size="80" name="give_answer_string" value="$given" $readonly/>
 };
 }
 
