@@ -322,11 +322,40 @@ sub show_mcq {
     show_choices($row{'qtype'});
 }
 
+sub local_css {
+    print qq{
+<style>
+
+.submit-container {
+    border: 1px solid tan;
+    background-color: wheat;
+    display: grid;
+    grid-template-columns: auto auto auto;
+    position: fixed;
+    bottom: 5%;
+    width: 90%;
+    align: center;
+    margin-left: 5%;
+    margin-right: 5%;
+    text-align: center;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+#next-q div {
+    background-color: red;
+}
+</style>
+};
+
+}
+
 sub doc_begin {
     print "<html>";
     print "<head>";
     print "<title> Take a Test </title>";
     link_css();
+    local_css();
     print "</head>" . "\n";
     print "<body>";
     top_menu($SESSION{'sid'});
@@ -352,21 +381,37 @@ sub DISPLAY {
             <input type="hidden" name="tst_id" value="$FORM{'tst_id'}" />
     };
 
-    if ($SESSION{'test_submitted'} == 0) {
-        print qq{<input type="submit" name="answer" value="Submit Answer" />};
+    my $answer_disable = "";
+
+    if ($SESSION{'test_submitted'} == 1) {
+        $answer_disable = "disabled";
     }
 
-    if ($FORM{'cur_seq'} < $SESSION{'tst_qst_count'}) {
-        print qq{
-            <input type="submit" name="next" value="Next Question" />
-        };
+    my $next_disable = "";
+
+    if ($FORM{'cur_seq'} >= $SESSION{'tst_qst_count'}) {
+        $next_disable = "disabled";
     }
 
-    if ($FORM{'cur_seq'} > 1) {
-        print qq{
-            <input type="submit" name="prev" value="Previous Question" />
-        };
+    my $prev_disable = "";
+
+    if ($FORM{'cur_seq'} <= 1) {
+        $prev_disable = "disabled";
     }
+
+    print qq{
+<div class="submit-container">
+    <div>
+        <input type="submit" name="prev" value="Previous Question" $prev_disable />
+    </div>
+    <div>
+        <input type="submit" name="answer" value="Submit Answer" $answer_disable />
+    </div>
+    <div id="next-q">
+        <input type="submit" name="next" value="Next Question" $next_disable />
+    </div>
+</div>
+};
 
     print q{
         </form>};
