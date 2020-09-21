@@ -126,6 +126,21 @@ CREATE TABLE `ry_biblio` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `ry_exam_states`
+--
+
+DROP TABLE IF EXISTS `ry_exam_states`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ry_exam_states` (
+  `exam_state_id` tinyint unsigned NOT NULL AUTO_INCREMENT,
+  `exam_state_name` char(16) NOT NULL,
+  PRIMARY KEY (`exam_state_id`),
+  UNIQUE KEY `exam_state_name` (`exam_state_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `ry_given_string`
 --
 
@@ -383,7 +398,11 @@ CREATE TABLE `ry_test_schedule` (
   `sch_submitted` tinyint(1) NOT NULL DEFAULT '0',
   `sch_created_on` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `sch_submit_time` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`sch_userid`,`sch_tst_id`)
+  `sch_tst_giver` int NOT NULL,
+  `sch_exam_state` tinyint unsigned NOT NULL,
+  PRIMARY KEY (`sch_userid`,`sch_tst_id`),
+  KEY `sch_tst_giver` (`sch_tst_giver`),
+  CONSTRAINT `ry_test_schedule_ibfk_1` FOREIGN KEY (`sch_tst_giver`) REFERENCES `ry_users` (`userid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -448,4 +467,4 @@ CREATE TABLE `ry_users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-09-20 21:55:39
+-- Dump completed on 2020-09-21 22:19:55

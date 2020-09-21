@@ -70,6 +70,7 @@ sub MAIN {
     IF_AUTH_LINK("note-edit.pl", "Edit a Note");
     IF_AUTH_LINK("image-upload.pl", "Upload an image");
     IF_AUTH_LINK("image-view.pl", "View an image");
+    IF_AUTH_LINK("validate.pl", "List Tests That I Need To Validate");
     print "</ul>";
     print "</body>";
 
