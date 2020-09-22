@@ -50,14 +50,15 @@ sub COLLECT {
 
 sub PROCESS {
     if (defined $FORM{'confirm'}) {
-	my $userid = $FORM{'selected_username'};
-	my $tst_id = $FORM{'selected_tst_id'};
+        my $userid = $FORM{'selected_username'};
+        my $tst_id = $FORM{'selected_tst_id'};
+        my $tst_giver = $SESSION{'userid'};
 
-	$DBH->begin_work();
-	insert_test_schedule($DBH, $userid, $tst_id,
-			     $FORM{'from_date'}, $FORM{'to_date'});
-	prepare_test_attempt($DBH, $userid, $tst_id);
-	$DBH->commit();
+        $DBH->begin_work();
+        insert_test_schedule($DBH, $userid, $tst_id,
+                $FORM{'from_date'}, $FORM{'to_date'}, $tst_giver);
+        prepare_test_attempt($DBH, $userid, $tst_id);
+        $DBH->commit();
     }
 }
 
@@ -131,31 +132,32 @@ sub DISPLAY {
     print qq{<input type="hidden" name="sid" value="$SESSION{'sid'}" />};
 
     if (! defined $FORM{'selected_tst_id'} ) {
-	show_existing_tests();
+        show_existing_tests();
     } elsif (! defined $FORM{'selected_username'} ) {
-	# Test ID has been selected already.  Now select user. 
-	print qq{<input type="hidden" name="selected_tst_id" value="$FORM{'selected_tst_id'}" />};
-	show_users();
+# Test ID has been selected already.  Now select user. 
+        print qq{<input type="hidden" name="selected_tst_id" value="$FORM{'selected_tst_id'}" />};
+        show_users();
     } elsif (! (defined $FORM{'from_date'} && defined $FORM{'to_date'}) ) {
-	print qq{<input type="hidden" name="selected_tst_id" value="$FORM{'selected_tst_id'}" />};
-	print qq{<input type="hidden" name="selected_username" value="$FORM{'selected_username'}" />};
+        print qq{<input type="hidden" name="selected_tst_id" value="$FORM{'selected_tst_id'}" />};
+        print qq{<input type="hidden" name="selected_username" value="$FORM{'selected_username'}" />};
 
-	show_dates();
+        show_dates();
     } elsif (! defined $FORM{'confirm'}) {
-	print qq{<input type="hidden" name="selected_tst_id" value="$FORM{'selected_tst_id'}" />};
-	print qq{<input type="hidden" name="selected_username" value="$FORM{'selected_username'}" />};
-	print qq{<input type="hidden" name="from_date" value="$FORM{'from_date'}" />};
-	print qq{<input type="hidden" name="to_date" value="$FORM{'to_date'}" />} .
-	    q{<input type="submit" name="confirm" value="Confirm" />};
+        print qq{<input type="hidden" name="selected_tst_id" value="$FORM{'selected_tst_id'}" />};
+        print qq{<input type="hidden" name="selected_username" value="$FORM{'selected_username'}" />};
+        print qq{<input type="hidden" name="userid" value="$SESSION{'userid'}" />};
+        print qq{<input type="hidden" name="from_date" value="$FORM{'from_date'}" />};
+        print qq{<input type="hidden" name="to_date" value="$FORM{'to_date'}" />} .
+            q{<input type="submit" name="confirm" value="Confirm" />};
     } else {
-	print q{<h2> Test Schedule Completed </h2>} . "\n"
-	    . q{<table>} . "\n"
-	    . q{<tr> <th> Test Property </th> <th> Value </th> </tr>} . "\n"
-	    . qq{<tr> <td> Test ID </td> <td> $FORM{'selected_tst_id'} </td> </tr>} . "\n"
-	    . qq{<tr> <td> User </td> <td> $FORM{'selected_username'} </td> </tr> } . "\n"
-	    . qq{<tr> <td> From Date </td> <td> $FORM{'from_date'} </td> </tr> } . "\n"
-	    . qq{<tr> <td> To Date </td> <td> $FORM{'to_date'} </td> </tr> } . "\n"
-	    . q{</table>};
+        print q{<h2> Test Schedule Completed </h2>} . "\n"
+            . q{<table>} . "\n"
+            . q{<tr> <th> Test Property </th> <th> Value </th> </tr>} . "\n"
+            . qq{<tr> <td> Test ID </td> <td> $FORM{'selected_tst_id'} </td> </tr>} . "\n"
+            . qq{<tr> <td> User </td> <td> $FORM{'selected_username'} </td> </tr> } . "\n"
+            . qq{<tr> <td> From Date </td> <td> $FORM{'from_date'} </td> </tr> } . "\n"
+            . qq{<tr> <td> To Date </td> <td> $FORM{'to_date'} </td> </tr> } . "\n"
+            . q{</table>};
     }
     print q{</form>};
     print "</body>";

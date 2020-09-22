@@ -51,6 +51,8 @@ sub PROCESS {
 }
 
 sub list_my_reports {
+    my $sid=$SESSION{'sid'};
+    my $taker=$SESSION{'userid'};
 
     my $query =  q{SELECT rpt_tst_id, rpt_q_total, rpt_q_correct, rpt_q_wrong, rpt_q_skip, rpt_created
 		       FROM ry_test_reports WHERE rpt_userid = ? ORDER BY rpt_created DESC};
@@ -68,24 +70,35 @@ sub list_my_reports {
 	<th> Wrong </th>
 	<th> Skipped </th>
 	<th> Date </th>
+	<th> Review </th>
 	</tr>
     };
 
 
     while (my ($tst_id, $total, $correct, $wrong, $skip, $created) = $stmt->fetchrow()) {
 
-	my $qs=qq{taketest.pl?sid=$SESSION{'sid'}&tst_id=$tst_id};
-	
-	print qq{
-	<tr> 
-	    <td> <a href="$qs">$tst_id</a> </td>
-	    <td> $total </td>
-	    <td> $correct </td>
-	    <td> $wrong </td>
-	    <td> $skip </td>
-	    <td> $created </td>
-	    </tr>
-	};
+        my $qs=qq{taketest.pl?sid=$sid&tst_id=$tst_id};
+
+        print qq{
+            <tr> 
+                <td> <a href="$qs">$tst_id</a> </td>
+                <td> $total </td>
+                <td> $correct </td>
+                <td> $wrong </td>
+                <td> $skip </td>
+                <td> $created </td>
+                <td>
+
+                <form action="test-review.pl?sid=$sid" method="post">
+                <input type="hidden" name="sid" value="$sid" />
+                <input type="hidden" name="taker" value="$taker" />
+                <input type="hidden" name="tst_id" value="$tst_id" />
+                <input type="submit" name="test_review" value="Test Review" />
+                </form>
+
+                </td>
+                </tr>
+        };
     }
 
     print q{</table>};

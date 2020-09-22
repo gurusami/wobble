@@ -81,7 +81,7 @@ CREATE TABLE `question` (
   CONSTRAINT `question_ibfk_1` FOREIGN KEY (`userid`) REFERENCES `ry_users` (`userid`),
   CONSTRAINT `question_ibfk_2` FOREIGN KEY (`qsrc_ref`) REFERENCES `ry_biblio` (`ref_id`),
   CONSTRAINT `question_ibfk_3` FOREIGN KEY (`qtype`) REFERENCES `ry_qst_types` (`qst_type_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=293 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=301 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -122,7 +122,7 @@ CREATE TABLE `ry_biblio` (
   `ref_accessed` date DEFAULT NULL,
   PRIMARY KEY (`ref_id`),
   UNIQUE KEY `ref_nick` (`ref_nick`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -402,7 +402,9 @@ CREATE TABLE `ry_test_schedule` (
   `sch_exam_state` tinyint unsigned NOT NULL,
   PRIMARY KEY (`sch_userid`,`sch_tst_id`),
   KEY `sch_tst_giver` (`sch_tst_giver`),
-  CONSTRAINT `ry_test_schedule_ibfk_1` FOREIGN KEY (`sch_tst_giver`) REFERENCES `ry_users` (`userid`)
+  KEY `sch_exam_state` (`sch_exam_state`),
+  CONSTRAINT `ry_test_schedule_ibfk_1` FOREIGN KEY (`sch_tst_giver`) REFERENCES `ry_users` (`userid`),
+  CONSTRAINT `ry_test_schedule_ibfk_2` FOREIGN KEY (`sch_exam_state`) REFERENCES `ry_exam_states` (`exam_state_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -437,7 +439,7 @@ CREATE TABLE `ry_tests` (
   `tst_title` char(128) DEFAULT NULL,
   PRIMARY KEY (`tst_id`),
   UNIQUE KEY `tst_title` (`tst_title`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -455,7 +457,7 @@ CREATE TABLE `ry_users` (
   PRIMARY KEY (`userid`),
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `username_2` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -467,4 +469,4 @@ CREATE TABLE `ry_users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-09-21 22:19:55
+-- Dump completed on 2020-09-22 21:19:31

@@ -1,9 +1,6 @@
 #!/usr/bin/perl
 #
-# Created: Mon 21 Sep 2020 09:16:43 PM IST
-# Last-Updated: Mon 21 Sep 2020 09:16:43 PM IST
-# 
-# Time-stamp: <2020-09-09 13:41:07 annamalai>
+# Time-stamp: <2020-09-11 13:42:12 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
 #
@@ -51,66 +48,67 @@ sub COLLECT {
 }
 
 sub PROCESS {
-    if ($ENV{'REQUEST_METHOD'} eq "POST") {
-    }
 }
 
-sub list_tests_to_validate {
-    my $query = q{
-SELECT c.username AS giver, b.username AS taker, a.sch_tst_id AS tid, d.exam_state_name AS state, a.sch_userid AS taker_id
-FROM ry_test_schedule a, ry_users b, ry_users c, ry_exam_states d
-WHERE a.sch_userid = b.userid
-AND c.userid = a.sch_tst_giver 
-AND a.sch_exam_state = d.exam_state_id
-AND a.sch_exam_state = ?
-AND a.sch_tst_giver = ?
-};
+sub list_my_reports {
+    my $sid = $SESSION{'sid'};
 
-    # my $query = "SELECT * FROM ry_test_schedule WHERE sch_exam_state = ? AND sch_tst_giver = ?";
+    my $query =  q{SELECT rpt_userid, rpt_tst_id, rpt_q_total, rpt_q_correct, rpt_q_wrong, rpt_q_skip, rpt_created
+		       FROM ry_test_reports ORDER BY rpt_userid, rpt_tst_id};
+
     my $stmt = $DBH->prepare($query) or die $DBH->errstr();
-    $stmt->execute(2, $SESSION{'userid'}) or die $DBH->errstr();
+    $stmt->execute() or die $DBH->errstr();
 
     print q{
-<table>
-    <tr>
-        <th> Test Giver </th>
-        <th> Test Taker </th>
-        <th> Test ID </th>
-        <th> Test State </th>
-        <th> Validate </th>
-    </tr>
-};
+    <h2> My Test Reports </h2>
+	<table>
+	<tr> 
+	<th> User ID </th>
+	<th> Test ID </th>
+	<th> Total Questions </th>
+	<th> Correct </th>
+	<th> Wrong </th>
+	<th> Skipped </th>
+	<th> Date </th>
+	<th> Review </th>
+	</tr>
+    };
 
-    while (my $row_href = $stmt->fetchrow_hashref()) {
-        my %ROW = %{$row_href};
+
+    while (my ($taker, $tst_id, $total, $correct, $wrong, $skip, $created) = $stmt->fetchrow()) {
+
+        my $qs=qq{taketest.pl?sid=$sid&tst_id=$tst_id};
 
         print qq{
-<tr>
-    <td> $ROW{'giver'} </td>
-    <td> $ROW{'taker'} </td>
-    <td> $ROW{'tid'} </td>
-    <td> $ROW{'state'} </td>
-    <td>
-        <form action="ticktest.pl?sid=$SESSION{'sid'}" method="post">
-        <input type="hidden" name="sid" value="$SESSION{'sid'}" />
-        <input type="hidden" name="tst_id" value="$ROW{'tid'}" />
-        <input type="hidden" name="taker" value="$ROW{'taker_id'}" />
-        <input type="submit" name="ticktest" value="Validate" />
-        </form>
-    </td>
-</tr>
-};
+            <tr> 
+                <td> $taker </td>
+                <td> <a href="$qs">$tst_id</a> </td>
+                <td> $total </td>
+                <td> $correct </td>
+                <td> $wrong </td>
+                <td> $skip </td>
+                <td> $created </td>
+                <td>
+                <form action="test-review.pl?sid=$sid" method="post">
+                <input type="hidden" name="sid" value="$sid" />
+                <input type="hidden" name="taker" value="$taker" />
+                <input type="hidden" name="tst_id" value="$tst_id" />
+                <input type="submit" name="test_review" value="Test Review" />
+                </form>
+                </td>
+                </tr>
+        };
     }
 
     print q{</table>};
-
-    $stmt->finish();
+    
 }
+
 
 sub DISPLAY {
     print "<html>";
     print "<head>";
-    print "<title> Wobble: List Tests To Be Validated </title>";
+    print "<title> Wobble: List My Test Reports </title>";
 
     link_css();
 
@@ -118,12 +116,7 @@ sub DISPLAY {
     print "<body>";
     top_menu($SESSION{'sid'});
 
-    print q{
-<h2> List of Tests To Be Validated </h2>
-};
-
-    list_tests_to_validate();
-
+    list_my_reports();
     print "</body>";
     print "</html>";
 

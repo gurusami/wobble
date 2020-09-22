@@ -170,6 +170,18 @@ sub select_answer_1 {
     return $row;
 }
 
+sub obtain_answer_1 {
+    my $dbh = shift;
+    my $qid = shift;
+
+    my $query = "SELECT qans FROM answer_1 WHERE qid = ?";
+    my $stmt = $dbh->prepare($query);
+    $stmt->execute($qid);
+    my ($answer) = $stmt->fetchrow();
+    $stmt->finish();
+    return $answer;
+}
+
 sub validate_answer_1 {
     my $dbh = shift;
     my $qid = shift;
@@ -678,10 +690,11 @@ sub insert_test_schedule {
     my $tst_id = shift;
     my $from_date = shift;
     my $to_date = shift;
+    my $tst_giver = shift;
     
-    my $query = q{INSERT INTO ry_test_schedule (sch_userid, sch_tst_id, sch_from, sch_to) VALUES (?, ?, ?, ?)};
+    my $query = q{INSERT INTO ry_test_schedule (sch_userid, sch_tst_id, sch_from, sch_to, sch_tst_giver, sch_exam_state) VALUES (?, ?, ?, ?, ?, 1)};
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
-    $stmt->execute($userid, $tst_id, $from_date, $to_date) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $from_date, $to_date, $tst_giver) or die $dbh->errstr();
     $stmt->finish();
 }
 
@@ -695,6 +708,17 @@ sub mark_test_submitted {
 		      sch_submit_time = CURRENT_TIMESTAMP
 		      WHERE sch_userid = ?
 		      AND sch_tst_id = ?};
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub mark_test_validated {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    
+    my $query = q{UPDATE ry_test_schedule SET sch_exam_state = 3 WHERE sch_userid = ?  AND sch_tst_id = ?};
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
     $stmt->execute($userid, $tst_id) or die $dbh->errstr();
     $stmt->finish();
@@ -769,6 +793,31 @@ sub insert_attempt_answer {
     $stmt->finish();
 }
 
+sub insert_attempt {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+
+    my $query = q{INSERT INTO ry_test_attempts (att_userid, att_tst_id, att_qid) VALUES (?, ?, ?)};
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $qid) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub ensure_attempt {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+
+    my $exists = check_attempt($dbh, $userid, $tst_id, $qid);
+
+    if ($exists == 0) {
+        insert_attempt($dbh, $userid, $tst_id, $qid);
+    }
+}
+
 sub give_answer {
     my $dbh = shift;
     my $userid = shift;
@@ -819,6 +868,68 @@ sub fetch_user_given_answer {
     return $given;
 }
 
+sub mark_correct {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+
+    ensure_attempt($dbh, $userid, $tst_id, $qid);
+
+    my $query = q{UPDATE ry_test_attempts SET att_result = TRUE
+		      WHERE att_userid = ? AND att_tst_id = ? 
+		      AND att_qid = ?};
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $qid) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub is_answer_validated {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+
+    my $query = "SELECT att_given, att_result FROM ry_test_attempts WHERE att_userid = ? AND att_tst_id = ? AND att_qid = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $qid) or die $dbh->errstr();
+    my ($given, $result) = $stmt->fetchrow();
+    $stmt->finish();
+    return $result;
+}
+
+sub mark_wrong {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+
+    ensure_attempt($dbh, $userid, $tst_id, $qid);
+
+    my $query = q{UPDATE ry_test_attempts SET att_result = FALSE
+		      WHERE att_userid = ? AND att_tst_id = ? 
+		      AND att_qid = ?};
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $qid) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub mark_skipped {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+
+    ensure_attempt($dbh, $userid, $tst_id, $qid);
+
+    my $query = q{UPDATE ry_test_attempts SET att_result = NULL
+		      WHERE att_userid = ? AND att_tst_id = ? 
+		      AND att_qid = ?};
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $qid) or die $dbh->errstr();
+    $stmt->finish();
+}
+
 sub get_correct_count {
     my $dbh = shift;
     my $userid = shift;
@@ -837,7 +948,7 @@ sub get_skipped_count {
     my $userid = shift;
     my $tst_id = shift;
 
-    my $query = "SELECT COUNT(*) FROM ry_test_attempts WHERE att_userid = ? AND att_tst_id = ? AND att_given IS NULL";
+    my $query = "SELECT COUNT(*) FROM ry_test_attempts WHERE att_userid = ? AND att_tst_id = ? AND att_result IS NULL";
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
     $stmt->execute($userid, $tst_id) or die $dbh->errstr();
     my ($skipped) = $stmt->fetchrow();
@@ -877,6 +988,34 @@ sub insert_test_report {
     my $query = "INSERT INTO ry_test_reports (rpt_userid, rpt_tst_id, rpt_q_total, rpt_q_correct, rpt_q_wrong, rpt_q_skip) VALUES (?, ?, ?, ?, ?, ?)";
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
     $stmt->execute($userid, $tst_id, $total, $correct, $wrong, $skip) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub check_for_report {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+
+    my $query = "SELECT COUNT(*) FROM ry_test_reports WHERE rpt_userid = ? AND rpt_tst_id = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id) or die $dbh->errstr();
+    my ($exists) = $stmt->fetchrow();
+    $stmt->finish();
+    return $exists;
+}
+
+sub update_test_report {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $total = shift;
+    my $correct = shift;
+    my $wrong = shift;
+    my $skip = shift;
+
+    my $query = "UPDATE ry_test_reports SET rpt_q_total = ?, rpt_q_correct = ?, rpt_q_wrong = ?, rpt_q_skip = ? WHERE rpt_userid = ? AND rpt_tst_id = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($total, $correct, $wrong, $skip, $userid, $tst_id) or die $dbh->errstr();
     $stmt->finish();
 }
 

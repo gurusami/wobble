@@ -249,11 +249,11 @@ sub display_answer_string {
 
     print qq{
 <div>
-    <h2> Answer (Single Decimal Number) </h2>
+    <h2> Answer (String) </h2>
         <form action="tinker.pl?sid=$sid" method="post">
             <input type="hidden" name="qid" value="$qid" />
             <input type="hidden" name="sid" value="$sid" />
-            <input type="number" step="any" name="qans" value="$answer" />
+            <textarea rows="5" cols="80" name="qans">$answer</textarea>
             <input type="submit" name="UpdateAnswerString" value="Update Answer" />
         </form>
 </div>

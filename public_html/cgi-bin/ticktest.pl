@@ -52,6 +52,10 @@ sub PROCESS {
     my $row_href = get_tst_info($DBH, $FORM{'tst_id'});
     my %row = %{$row_href};
 
+    # taker is the one who took the test.
+    $SESSION{'taker'} = $FORM{'taker'};
+    my $taker = $SESSION{'taker'};
+
     $SESSION{'tst_id'} = $row{'tst_id'};
     $SESSION{'tst_qst_count'} = $row{'tst_qst_count'};
     $SESSION{'tst_title'} = $row{'tst_title'};
@@ -74,34 +78,28 @@ sub PROCESS {
         $FORM{'cur_seq'}--;
         $SESSION{'qid'} = get_nth_qid_in_tst($DBH, $tst_id, $FORM{'cur_seq'});
         $qid = $SESSION{'qid'};
-    } elsif (defined $FORM{'answer'}) {
-        if (defined $FORM{'choice'} && $FORM{'choice'} > 0) {
-            my $given = $FORM{'choice'};
-            give_answer($DBH, $SESSION{'userid'}, $tst_id,
-                    $SESSION{'qid'}, $given);
-        } elsif (defined $FORM{'give_answer_string'}) {
-            my $given = $FORM{'give_answer_string'};
-            modify_user_given_string($DBH, $userid, $tst_id, $qid, $given);
-        } elsif (defined $FORM{'give_answer_number'}) {
-            my $given = $FORM{'give_answer_number'};
-            give_answer($DBH, $userid, $tst_id, $qid, $given);
+    } elsif (defined $FORM{'correct'}) {
+        mark_correct($DBH, $taker, $tst_id, $qid);
+    } elsif (defined $FORM{'wrong'}) {
+        mark_wrong($DBH, $taker, $tst_id, $qid);
+    } elsif (defined $FORM{'skipped'}) {
+        mark_skipped($DBH, $taker, $tst_id, $qid);
+    } elsif (defined $FORM{'prepare_report'}) {
+        my $total = $SESSION{'tst_qst_count'};
+        my $correct = get_correct_count($DBH, $taker, $tst_id);
+        my $skipped = get_skipped_count($DBH, $taker, $tst_id);
+        my $wrong = get_wrong_count($DBH, $taker, $tst_id);
+
+        my $report_exists = check_for_report($DBH, $taker, $tst_id);
+
+        if ($report_exists == 0) {
+            insert_test_report($DBH, $taker, $tst_id, $total, $correct, $wrong, $skipped);
         } else {
-            die "No choice defined";
+            update_test_report($DBH, $taker, $tst_id, $total, $correct, $wrong, $skipped);
         }
+
+        mark_test_validated($DBH, $taker, $tst_id);
     }
-
-    if (defined $FORM{'locktest'}) {
-        # Mark the test as submitted.  No more changes are allowed.
-        mark_test_submitted($DBH, $SESSION{'userid'}, $tst_id);
-    }
-
-    $FORM{'choice'} = fetch_user_given_answer(
-            $DBH, $SESSION{'userid'}, $tst_id, 
-            $SESSION{'qid'});
-
-    $SESSION{'test_submitted'} = is_test_submitted(
-            $DBH, $SESSION{'userid'}, $tst_id);
-
 }
 
 sub validate_answers {
@@ -165,77 +163,131 @@ sub show_test_result() {
 }
     
 sub show_test_details {
+    my $tst_id = $SESSION{'tst_id'};
+    my $taker = $SESSION{'taker'};
+
     print qq{
     <ul id="menu">
-	<li> [Test ID: $SESSION{'tst_id'}] </li>
+	<li> [Test ID: $tst_id] </li>
 	<li> Test Title: $SESSION{'tst_title'} </li>
 	<li> Total Questions: $SESSION{'tst_qst_count'} </li>
 	<li> Current Question: $FORM{'cur_seq'} </li>
-    };
+    </ul>
+};
 
-    if ($SESSION{'test_submitted'} == 0) {
-	print qq{
-	<li>
-	    <form action="taketest.pl" method="post">
-	    <input type="hidden" name="sid" value="$SESSION{'sid'}" />
-	    <input type="hidden" name="tst_id" value="$SESSION{'tst_id'}" />
-	    <input type="submit" name="locktest" value="Submit Test" />
-	    </form>
-	    </li>
-	};
-    }	
-    print q{</ul>};
+    my $val;
+    my $report_exists = check_for_report($DBH, $taker, $tst_id);
 
-    if ($SESSION{'test_submitted'} == 1) {
-	# show_test_result();
+    if ($report_exists == 0) {
+        $val = "Prepare Report";
+    } else {
+        $val = "Update Report";
     }
+
+	print qq{
+	<div>
+	    <form action="ticktest.pl?sid=$SESSION{'sid'}" " method="post">
+	    <input type="hidden" name="sid" value="$SESSION{'sid'}" />
+	    <input type="hidden" name="tst_id" value="$tst_id" />
+	    <input type="hidden" name="taker" value="$FORM{'taker'}" />
+	    <input type="submit" name="prepare_report" value="$val" />
+	    </form>
+	    </div>
+	};
 }
 
 sub show_numberbox_for_answer {
     my $sid = $SESSION{'sid'};
-    my $userid = $SESSION{'userid'};
+    my $taker = $SESSION{'taker'};
     my $tst_id = $SESSION{'tst_id'};
-    my $qid = $SESSION{'cur_qid'};
-    my $locked = $SESSION{'test_submitted'};
+    my $qid = $SESSION{'qid'};
     my $readonly = "";
 
-    my $given = fetch_user_given_answer($DBH, $userid, $tst_id, $qid);
+    my $given = fetch_user_given_answer($DBH, $taker, $tst_id, $qid);
+    my $correct = obtain_answer_1($DBH, $qid);
 
     if (! defined $given) {
         $given = "";
     }
 
-    if (defined $locked && $locked == 1) {
-        $readonly = "readonly";
-    }
-
     print qq{
-    <input type="number" size="80" name="give_answer_number" value="$given" $readonly/>
+    <input type="number" size="80" name="give_answer_number" value="$given" readonly/>
+
+    <h2> Correct Answer </h2>
+
+    <textarea rows="5" cols=80" readonly>$correct</textarea>
 };
 }
 
 sub show_textbox_for_answer()
 {
     my $sid = $SESSION{'sid'};
-    my $userid = $SESSION{'userid'};
+    my $taker = $SESSION{'taker'};
     my $tst_id = $SESSION{'tst_id'};
-    my $qid = $SESSION{'cur_qid'};
-    my $locked = $SESSION{'test_submitted'};
+    my $qid = $SESSION{'qid'};
     my $readonly = "";
 
-    my $given = select_user_given_string($DBH, $userid, $tst_id, $qid);
+    my $given = select_user_given_string($DBH, $taker, $tst_id, $qid);
+    my $correct = select_answer_string($DBH, $qid);
 
     if (! defined $given) {
         $given = "";
     }
 
-    if (defined $locked && $locked == 1) {
-        $readonly = "readonly";
+    print qq{
+    <input type="text" size="80" name="give_answer_string" value="$given" readonly/>
+
+    <h3> Correct Answer </h3>
+
+    <textarea rows="5" cols="80" readonly>$correct</textarea>
+};
+}
+
+sub show_choices_mcq_unique {
+    my $qid = $SESSION{'qid'};
+    my $userid = $SESSION{'userid'};
+    my $taker = $SESSION{'taker'};
+    my $tst_id = $SESSION{'tst_id'};
+
+    my $correct = get_correct_answer_2($DBH, $qid);
+    my $given = fetch_user_given_answer($DBH, $taker, $tst_id, $qid);
+
+    my $query = "SELECT chid, choice_html, correct FROM answer_2 WHERE qid = ? ORDER BY chid";
+    my $stmt = $DBH->prepare($query) or die $DBH->errstr();
+    $stmt->execute($qid) or die $DBH->errstr();
+
+    print qq{<table>};
+    while (my ($chid, $choice_html, $correct) = $stmt->fetchrow())
+    {
+        my $cell_val;
+        my $color = "";
+        my $border;
+
+        if ($chid == $given) {
+            $color = "yellow";
+        }
+
+        if ($correct == 1) {
+            $border = "1px solid";
+        } else {
+            $border = "none";
+        }
+
+        $cell_val = qq{<p style="background-color: $color;">$chid</p>};
+
+        print qq{
+            <tr> 
+                <td style="border: $border;">  $cell_val </td>
+                <td> $choice_html </td>
+                </tr> };
     }
+    print qq{</table>};
 
     print qq{
-    <input type="text" size="80" name="give_answer_string" value="$given" $readonly/>
+<p> Note: User given answer has yellow background </p>
 };
+
+    $stmt->finish();
 }
 
 sub show_choices {
@@ -243,66 +295,24 @@ sub show_choices {
     my $sid = $SESSION{'sid'};
 
     my $locked = $SESSION{'test_submitted'};
-    my $qid = $SESSION{'cur_qid'};
-    my $query = "SELECT chid, choice_html FROM answer_2 WHERE qid = ? ORDER BY chid";
-    my $stmt = $DBH->prepare($query) or die $DBH->errstr();
-    $stmt->execute($qid) or die $DBH->errstr();
-
+    my $qid = $SESSION{'qid'};
     if ($qtype == 1) {
         # The answer is to be given as a single integer
         show_numberbox_for_answer();
     } elsif ($qtype == 4) {
         # The answer is to be given as a string.
         show_textbox_for_answer();
+    } elsif ($qtype == 2) {
+        show_choices_mcq_unique();
     } else {
-
-        my $user_choice = $FORM{'choice'};
-
-        print qq{<table>};
-        while (my ($chid, $choice_html) = $stmt->fetchrow())
-        {
-            my $cell_val;
-            if ($locked == 0) {
-# Not locked.  User can give answer.
-                my $checked = "";
-
-                if (defined $FORM{'choice'} && $FORM{'choice'} == $chid) {
-                    $checked = "checked";
-                }
-
-                if (! defined $choice_html) {
-                    $choice_html = "";
-                }
-                $cell_val = qq{<input type="radio" name="choice" value="$chid" $checked/>};
-            } else {
-# Locked.  User cannot change answer.
-                my $color;
-
-                if ($user_choice == $chid) {
-                    $color = "yellow";
-                }
-
-                $cell_val = qq{<p style="background-color: $color;">$chid</p>};
-            }
-
-            print qq{
-                <tr> 
-                    <td> $cell_val </td>
-                    <td> $choice_html </td>
-                    </tr> };
-        }
-        print qq{</table>};
-
+        die "Unknown question type";
     }
-
-    $stmt->finish();
 }
 
 sub show_mcq {
     my $qid_seq = $FORM{'cur_seq'};
     my $tst_id = $SESSION{'tst_id'};
-    my $qid = get_nth_qid_in_tst($DBH, $tst_id, $qid_seq);
-    $SESSION{'cur_qid'} = $qid;
+    my $qid = $SESSION{'qid'};
     my $row_href = select_question($DBH, $qid);
     my %row = %{$row_href};
     
@@ -316,11 +326,11 @@ sub local_css {
     print qq{
 <style>
 
-.submit-container {
+.tick-container {
     border: 1px solid tan;
     background-color: wheat;
     display: grid;
-    grid-template-columns: auto auto auto;
+    grid-template-columns: auto auto auto auto auto;
     position: fixed;
     bottom: 5%;
     width: 90%;
@@ -343,7 +353,7 @@ sub local_css {
 sub doc_begin {
     print "<html>";
     print "<head>";
-    print "<title> Take a Test </title>";
+    print "<title> Wobble: Validate Test Answers </title>";
     link_css();
     local_css();
     print "</head>" . "\n";
@@ -355,27 +365,36 @@ sub doc_end {
     print q{</body></html>};
 }
 
+sub report_validation_status {
+    my $validated = is_answer_validated($DBH, $SESSION{'taker'}, $SESSION{'tst_id'}, $SESSION{'qid'});
+
+    if (! defined $validated) {
+        print qq{<p> This question is NOT yet validated or SKIPPED. </p>};
+    } elsif ($validated == 1) {
+        print qq{<p> This question has been validated as CORRECT. </p>};
+    } elsif ($validated == 0) {
+        print qq{<p> This question has been validated as WRONG. </p>};
+    }
+}
+
 sub DISPLAY {
     doc_begin();
     show_test_details();
 
     print qq{
-        <form action="taketest.pl?sid=$SESSION{'sid'}" method="POST">
+        <form action="ticktest.pl?sid=$SESSION{'sid'}" method="POST">
     };
 
     show_mcq();
 
+    report_validation_status();
+
     print qq{
         <input type="hidden" name="sid" value="$SESSION{'sid'}" />
+        <input type="hidden" name="taker" value="$FORM{'taker'}" />
             <input type="hidden" name="cur_seq" value="$FORM{'cur_seq'}" />
             <input type="hidden" name="tst_id" value="$FORM{'tst_id'}" />
     };
-
-    my $answer_disable = "";
-
-    if ($SESSION{'test_submitted'} == 1) {
-        $answer_disable = "disabled";
-    }
 
     my $next_disable = "";
 
@@ -390,12 +409,18 @@ sub DISPLAY {
     }
 
     print qq{
-<div class="submit-container">
+<div class="tick-container">
     <div>
         <input type="submit" name="prev" value="Previous Question" $prev_disable />
     </div>
     <div>
-        <input type="submit" name="answer" value="Submit Answer" $answer_disable />
+        <input type="submit" name="correct" value="Correct" />
+    </div>
+    <div>
+        <input type="submit" name="wrong" value="Wrong" />
+    </div>
+    <div>
+        <input type="submit" name="skipped" value="Skipped" />
     </div>
     <div id="next-q">
         <input type="submit" name="next" value="Next Question" $next_disable />
