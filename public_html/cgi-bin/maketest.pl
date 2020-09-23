@@ -57,10 +57,14 @@ sub show_test_details {
     $stmt->execute($FORM{'tst_id'}) or die $DBH->errstr();
     my ($tst_id, $tst_qst_count, $tst_type, $tst_title, $tst_owner, $tst_created_on) = $stmt->fetchrow();
 
-    print q{<h2> Test Information </h2>};
-    print q{<table>} . "\n";
-    print q{<tr> <th> Test ID </th> <th> Question Count </th> <th> Type </th> <th> Title </th> <th> Owner </th> <th> Created On </th> </tr>} . "\n";
-    print q{<tr>};
+    print qq{
+<h2 align="center"> Test Information </h2>
+<table align="center">
+    <tr>
+        <th> Test ID </th> <th> Question Count </th> <th> Type </th> <th> Title </th> <th> Owner </th> <th> Created On </th>
+    </tr>
+    <tr>
+};
     print qq{<td> $tst_id </td> <td> $tst_qst_count </td> <td> $tst_type </td>}
     . qq{<td> $tst_title </td> <td> $tst_owner </td> <td> $tst_created_on </td>} . "\n";
     print q{</tr>};
@@ -68,79 +72,139 @@ sub show_test_details {
 }
 
 sub show_questions_in_test {
+    my $sid = $SESSION{'sid'};
     my $qlist_aref = get_qid_in_tst($DBH, $FORM{'tst_id'});
     my @qlist = @{$qlist_aref};
 
     my $N = 1 + $#qlist;
-    print qq{<h2> Questions in Test (Total: $N) </h2>};
-    
+    print qq{<h2 align="center"> Questions in Test (Total: $N) </h2>};
+
     if (@qlist > 0) {
-	my $query = "SELECT qid, qtype, LEFT(qlatex, 64) FROM question WHERE qid IN (" . join(',', @qlist) . ")";
-	my $stmt = $DBH->prepare($query);
-	$stmt->execute();
+        my $query = "SELECT qid, qtype, qhtml, b.qst_type_nick, c.ref_nick
+FROM question a, ry_qst_types b, ry_biblio c WHERE a.qsrc_ref = c.ref_id AND a.qtype = b.qst_type_id AND qid IN (" . join(',', @qlist) . ")";
+        my $stmt = $DBH->prepare($query);
+        $stmt->execute();
 
-	print q{<form action="maketest.pl" method="post">};
-	print q{<table>};
-	print qq{<tr> <th> Select </th> <th> QID </th> <th> Question Type </th> <th> Question </th> </tr>};
+        print q{<table align="center">};
+        print qq{<tr> <th> QID </th> <th> Question Type </th> <th> Reference </th> <th> Question </th> <th> Remove </th> </tr>};
 
-	while (my ($qid, $qtype, $qlatex) = $stmt->fetchrow()) {
-	    	print q{<tr>} . "\n";
-		print qq{<td> <input type="radio" name="qid" value="$qid" /> </td> };
-		print qq{<td> $qid </td> <td> $qtype </td> <td> $qlatex </td> </tr>};
-	}
-	print q{</table>};
-	print q{<input type="submit" name="remove_from_test" value="Remove Question from Test" />};
-	print qq{<input type="hidden" name="sid" value="$SESSION{'sid'}" />};
-	print qq{<input type="hidden" name="tst_id" value="$FORM{'tst_id'}" />} . "\n";
-	print q{</form>};
+        while (my ($qid, $qtype, $qhtml, $qst_type_nick, $ref_nick) = $stmt->fetchrow()) {
+            print q{<tr>} . "\n";
+            print qq{<td> $qid </td> <td> $qst_type_nick </td>
+                <td> $ref_nick </td>
+                <td> $qhtml </td>};
+            print qq{
+                <td>
+                    <form action="maketest.pl?sid=$sid" method="post">
+                    <input type="hidden" name="sid" value="$sid" />
+                    <input type="hidden" name="qid" value="$qid" />
+                    <input type="hidden" name="tst_id" value="$FORM{'tst_id'}" />
+                    <input type="submit" name="remove_from_test" value="Remove" />
+                    <input type="hidden" name="qid_min" value="$FORM{'qid_min'}" />
+                    </form>
+                    </td>
+            };
+            print qq{</tr>};
+        }
+        print q{</table>};
     }
 }
 
 sub show_questions {
-
-    
-    my $query = "SELECT qid, qtype, LEFT(qlatex, 64) FROM question WHERE qid > ? ORDER BY qid LIMIT ?";
+    my $sid = $SESSION{'sid'};
+    my $tst_id = $FORM{'tst_id'};
+    my $query = q{
+SELECT qid, qtype, qst_type_nick, qhtml, c.ref_nick AS ref_nick
+FROM question a, ry_qst_types b, ry_biblio c
+WHERE a.qtype = b.qst_type_id
+AND a.qsrc_ref = c.ref_id
+AND qid > ?
+AND qid NOT IN (SELECT tq_qid FROM ry_test_questions WHERE tq_tst_id = ?)
+ORDER BY qid LIMIT ?
+};
     my $stmt = $DBH->prepare($query);
-    $stmt->execute($FORM{'qid_min'}, $FORM{'qid_count'});
+    $stmt->execute($FORM{'qid_min'}, $tst_id, $FORM{'qid_count'});
 
-    print q{<h2> Available Questions </h2>};
-    print q{<form action="maketest.pl" method="post">};
-    print q{<table>};
-    print qq{<tr> <th> Select </th> <th> QID </th> <th> Question Type </th> <th> Question </th> </tr>};
+    print q{<h2 align="center"> Available Questions </h2>};
 
-    my $qid_to = $FORM{'qid_min'};
-    while (my ($qid, $qtype, $qlatex) = $stmt->fetchrow()) {
-	print q{<tr>} . "\n";
-	print qq{<td> <input type="radio" name="qid" value="$qid" /> </td> };
-	print qq{<td> $qid </td> <td> $qtype </td> <td> $qlatex </td> </tr>};
-	$qid_to = $qid;
+    print q{<div id="available"> <table align="center">};
+    print qq{
+        <tr> <th> QID </th> <th> Question Type </th>
+            <th> Reference </th>
+        <th> Question </th> <th> Add </th> </tr>
+    };
+
+    while (my ($qid, $qtype, $qtype_nick, $qhtml, $ref_nick) = $stmt->fetchrow()) {
+        print q{<tr>} . "\n";
+        print qq{<td> $qid </td> <td> $qtype_nick </td>
+            <td> $ref_nick </td>
+            <td> $qhtml </td>};
+        print qq{<td>
+            <form action="maketest.pl?sid=$sid" method="post">
+                <input type="hidden" name="sid" value="$sid" />
+                <input type="hidden" name="qid" value="$qid" />
+                <input type="hidden" name="tst_id" value="$FORM{'tst_id'}" />
+                <input type="submit" name="add_to_test" value="Add" />
+                <input type="hidden" name="qid_min" value="$FORM{'qid_min'}" />
+                </form>
+                </td>
+                </tr>
+        };
     }
 
+    print q{</table> </div>};
+
+    show_qst_navigation();
+
+    $stmt->finish();
+}
+
+sub show_nav_form {
+    my $sid = $SESSION{'sid'};
+    my $name = shift;
+    my $qid_min = shift;
+
+    print qq{
+<div>
+    <form action="maketest.pl?sid=$sid" method="post">
+        <input type="hidden" name="sid" value="$sid" />
+        <input type="hidden" name="tst_id" value="$FORM{'tst_id'}" />
+        <input type="hidden" name="qid_min" value="$qid_min" />
+        <input type="hidden" name="qid_count" value="$FORM{'qid_count'}" />
+        <input type="submit" name="$name" value="$name" />
+    </form>
+</div>
+}
+}
+
+sub show_qst_navigation {
+    my $sid = $SESSION{'sid'};
+    my $qid_min = $FORM{'qid_min'};
     my $prev_qid = $FORM{'qid_min'};
+    my $next_qid = $qid_min + $FORM{'qid_count'};
 
     if ($FORM{'qid_min'} > $FORM{'qid_count'}) {
-	$prev_qid = $FORM{'qid_min'} - $FORM{'qid_count'};
+        $prev_qid = $FORM{'qid_min'} - $FORM{'qid_count'};
     } else {
-	$prev_qid = 0;
+        $prev_qid = 0;
     }
 
     my $max_qid = select_max_qid($DBH);
     my $last_qid = $max_qid - $FORM{'qid_count'};
-    my $next_qs = qq@maketest.pl?sid=$SESSION{'sid'}&tst_id=$FORM{'tst_id'}&qid_min=$qid_to@;
-    my $prev_qs = qq@maketest.pl?sid=$SESSION{'sid'}&tst_id=$FORM{'tst_id'}&qid_min=$prev_qid@;
-    my $first_qs = qq@maketest.pl?sid=$SESSION{'sid'}&tst_id=$FORM{'tst_id'}&qid_min=0@;
-    my $last_qs = qq@maketest.pl?sid=$SESSION{'sid'}&tst_id=$FORM{'tst_id'}&qid_min=$last_qid@;
-    
 
-    print qq{<td colspan="4"> <a href="$first_qs">First</a> <a href="$prev_qs"> Prev </a> <a href="$next_qs"> Next </a> <a href="$last_qs">Last</a></td> </tr>};
-    print q{</table>};
-    print q{<input type="submit" name="add_to_test" value="Add Question to Test" />};
-    print qq{<input type="hidden" name="sid" value="$SESSION{'sid'}" />};
-    print qq{<input type="hidden" name="qid_min" value="$FORM{'qid_min'}" />};
-    print qq{<input type="hidden" name="tst_id" value="$FORM{'tst_id'}" />} . "\n";
-    print q{</form>};
+    print qq{
+<div style="width: 80%; margin-left: auto; display: grid; grid-template-columns: auto auto auto auto;">
+};
 
-    $stmt->finish();
+    show_nav_form("First", 0);
+    show_nav_form("Prev", $prev_qid);
+    show_nav_form("Next", $next_qid);
+    show_nav_form("Last", $last_qid);
+
+    print qq{
+</div> <!-- grid container -->
+};
+
 }
 
 sub PROCESS {
@@ -161,11 +225,28 @@ sub CHECK_TST_ID {
     }
 }
 
+sub local_css {
+    print qq{
+<style>
+#available {
+    width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+tr:nth-child(even) {
+    background-color: lightblue;
+}
+</style>
+};
+}
+
 sub DISPLAY {
     print "<html>";
     print "<head>";
     print "<title> Preparing Test With Test ID: $FORM{'tst_id'} </title>";
     link_css();
+    local_css();
     print "</head>" . "\n";
 
     print "<body>";

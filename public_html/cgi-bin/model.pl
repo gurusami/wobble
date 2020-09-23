@@ -527,11 +527,33 @@ sub insert_new_test {
     return last_insert_id($dbh);
 }
 
+sub update_test {
+    my $dbh = shift;
+    my $tst_id = shift;
+    my $tst_type = shift;
+    my $tst_title = shift;
+
+    my $query = "UPDATE $TABLE{'tests'} SET tst_type = ?, tst_title = ? WHERE tst_id = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tst_type, $tst_title, $tst_id) or die $dbh->errstr();
+    $stmt->finish();
+}
+
 sub increment_tst_qst_count {
     my $dbh = shift;
     my $tst_id = shift;
     
     my $query = "UPDATE ry_tests SET tst_qst_count = tst_qst_count + 1 WHERE tst_id = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tst_id) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub decrement_tst_qst_count {
+    my $dbh = shift;
+    my $tst_id = shift;
+    
+    my $query = "UPDATE ry_tests SET tst_qst_count = tst_qst_count - 1 WHERE tst_id = ?";
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
     $stmt->execute($tst_id) or die $dbh->errstr();
     $stmt->finish();
@@ -583,7 +605,53 @@ sub insert_one_test_question {
     $stmt->finish();
 }
 
-sub remove_one_test_question {
+sub get_max_seq_of_tst {
+    my $dbh = shift;
+    my $tst_id = shift;
+    
+    my $query = "SELECT tq_tst_id, max(tq_qid_seq) FROM ry_test_questions WHERE tq_tst_id = ? GROUP BY tq_tst_id";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tst_id) or die $dbh->errstr();
+    my ($seq) = $stmt->fetchrow();
+    $stmt->finish();
+
+    return $seq;
+}
+
+sub get_seq_of_qid {
+    my $dbh = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+    
+    my $query = "SELECT tq_qid_seq FROM ry_test_questions WHERE tq_tst_id = ? AND tq_qid = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tst_id, $qid) or die $dbh->errstr();
+    my ($seq) = $stmt->fetchrow();
+    $stmt->finish();
+
+    return $seq;
+}
+
+sub adjust_seq_in_tst {
+    my $dbh = shift;
+    my $tst_id = shift;
+    my $seq = shift;
+
+    my $query = "UPDATE ry_test_questions SET tq_qid_seq = tq_qid_seq - 1 WHERE tq_tst_id = ? AND tq_qid_seq > ? ORDER BY tq_qid_seq";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tst_id, $seq) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub delete_qid_from_tst {
+    my $dbh = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+
+    my $query = "DELETE FROM ry_test_questions WHERE tq_tst_id = ? AND tq_qid = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tst_id, $qid) or die $dbh->errstr();
+    $stmt->finish();
 }
 
 
@@ -600,6 +668,16 @@ sub add_question_to_test {
 }
 
 sub remove_question_from_test {
+    my $dbh = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+
+    $dbh->begin_work();
+    decrement_tst_qst_count($dbh, $tst_id);
+    my $seq = get_seq_of_qid($dbh, $tst_id, $qid);
+    delete_qid_from_tst($dbh, $tst_id, $qid);
+    adjust_seq_in_tst($dbh, $tst_id, $seq);
+    $dbh->commit();    
 }
 
 sub get_nth_qid_in_tst {
@@ -703,9 +781,11 @@ sub mark_test_submitted {
     my $userid = shift;
     my $tst_id = shift;
     
+    # The value 2 in sch_exam_state is for SUBMITTED.
     my $query = q{UPDATE ry_test_schedule
 		      SET sch_submitted = TRUE,
-		      sch_submit_time = CURRENT_TIMESTAMP
+		      sch_submit_time = CURRENT_TIMESTAMP,
+		      sch_exam_state = 2
 		      WHERE sch_userid = ?
 		      AND sch_tst_id = ?};
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();

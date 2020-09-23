@@ -75,13 +75,14 @@ CREATE TABLE `question` (
   `qsrc_ref` int DEFAULT NULL,
   `qlast_updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`qid`),
+  UNIQUE KEY `qhtml` (`qhtml`(128)),
   KEY `userid` (`userid`),
   KEY `qsrc_ref` (`qsrc_ref`),
   KEY `qtype` (`qtype`),
   CONSTRAINT `question_ibfk_1` FOREIGN KEY (`userid`) REFERENCES `ry_users` (`userid`),
   CONSTRAINT `question_ibfk_2` FOREIGN KEY (`qsrc_ref`) REFERENCES `ry_biblio` (`ref_id`),
   CONSTRAINT `question_ibfk_3` FOREIGN KEY (`qtype`) REFERENCES `ry_qst_types` (`qst_type_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=301 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=344 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -122,7 +123,7 @@ CREATE TABLE `ry_biblio` (
   `ref_accessed` date DEFAULT NULL,
   PRIMARY KEY (`ref_id`),
   UNIQUE KEY `ref_nick` (`ref_nick`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -266,8 +267,10 @@ DROP TABLE IF EXISTS `ry_qst_types`;
 CREATE TABLE `ry_qst_types` (
   `qst_type_id` int NOT NULL AUTO_INCREMENT,
   `qst_type_name` char(64) NOT NULL,
+  `qst_type_nick` char(8) NOT NULL,
   PRIMARY KEY (`qst_type_id`),
-  UNIQUE KEY `qst_type_name` (`qst_type_name`)
+  UNIQUE KEY `qst_type_name` (`qst_type_name`),
+  UNIQUE KEY `qst_type_nick` (`qst_type_nick`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -418,9 +421,11 @@ DROP TABLE IF EXISTS `ry_test_types`;
 CREATE TABLE `ry_test_types` (
   `tst_type_id` int NOT NULL AUTO_INCREMENT,
   `tst_type_name` char(64) NOT NULL,
+  `tst_type_nick` char(8) NOT NULL,
   PRIMARY KEY (`tst_type_id`),
-  UNIQUE KEY `tst_type_name` (`tst_type_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  UNIQUE KEY `tst_type_name` (`tst_type_name`),
+  UNIQUE KEY `tst_type_nick` (`tst_type_nick`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -439,7 +444,7 @@ CREATE TABLE `ry_tests` (
   `tst_title` char(128) DEFAULT NULL,
   PRIMARY KEY (`tst_id`),
   UNIQUE KEY `tst_title` (`tst_title`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -469,4 +474,4 @@ CREATE TABLE `ry_users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-09-22 21:19:31
+-- Dump completed on 2020-09-23 22:29:54

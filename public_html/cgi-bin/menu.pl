@@ -61,8 +61,7 @@ sub MAIN {
     # IF_AUTH_LINK("addmcq.pl", "Add Type 1 Question (MCQ)");
     IF_AUTH_LINK("tinker.pl", "Tinker a Question");
     IF_AUTH_LINK("biblio.pl", "Register a Reference/Bibliography");
-    IF_AUTH_LINK("create-test.pl", "Create a New Test");
-    IF_AUTH_LINK("maketest.pl", "Prepare a Test (Add/Remove Questions)");
+    IF_AUTH_LINK("create-test.pl", "Create/Modify/List Tests");
     IF_AUTH_LINK("test-schedule.pl", "Schedule a Test");
     IF_AUTH_LINK("list-test-sch.pl", "List ALL Scheduled Tests");
     IF_AUTH_LINK("list-mytests.pl", "List My Tests");

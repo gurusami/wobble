@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # Created: Mon 14 Sep 2020 10:39:48 PM IST
-# Last Modified: Thu 17 Sep 2020 04:29:49 PM IST
+# Last Modified: Wed 23 Sep 2020 05:54:02 PM IST
 # Time-stamp: <2020-09-10 06:27:50 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
@@ -184,7 +184,6 @@ sub top_menu {
       <li> [<a href="logout.pl?sid=$sid">Logout</a>] </li>
     </ul>
   </div>
-  <hr>
 };
 }
 
@@ -325,6 +324,10 @@ sub html_select_refs {
     $html = $html . qq{</select>};
 
     return $html;
+}
+
+sub nl{
+    print "\n";
 }
 
 1;
