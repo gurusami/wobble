@@ -63,22 +63,31 @@ sub PROCESS {
 }
 
 sub show_existing_tests {
-    my $query = "SELECT tst_id, tst_type, tst_owner, tst_created_on, tst_qst_count, tst_title FROM ry_tests ORDER BY tst_id DESC";
+    my $query = q{
+SELECT tst_id, tst_type, tst_state, tst_owner, tst_created_on, tst_qst_count, tst_title
+FROM ry_tests
+WHERE tst_state = 2
+AND tst_owner = ?
+ORDER BY tst_id DESC
+};
 
     my $stmt = $DBH->prepare($query);
-    $stmt->execute();
+    $stmt->execute($SESSION{'userid'});
 
     print q{<table>};
-    print q{<tr> <th> Select </th> <th> Test ID </th> <th> Test Type </th>} .
+    print q{<tr> <th> Select </th> <th> Test ID </th> <th> Test Type </th>
+    <th> Test State </th> } .
 	q{<th> Title </th> <th> Question Count </th> <th> Owner </th>} .
 	q{<th> Created On </th> </tr>};
     
-    while (my ($tst_id, $tst_type, $tst_owner, $tst_created_on, $tst_qst_count,
+    while (my ($tst_id, $tst_type, $tst_state, $tst_owner, $tst_created_on, $tst_qst_count,
 	       $tst_title) = $stmt->fetchrow()) {
 	print qq{<tr>} . "\n";
 	print qq{<td> <input type="radio" name="selected_tst_id" value="$tst_id" /> </td>} . "\n";
 	print qq{<td> $tst_id </td>} . "\n";
-	print qq{<td> $tst_type </td> <td> $tst_title </td> <td> $tst_qst_count </td> <td> $tst_owner </td> <td> $tst_created_on </td> </tr>};
+	print qq{<td> $tst_type </td>
+    <td> $tst_state </td>
+    <td> $tst_title </td> <td> $tst_qst_count </td> <td> $tst_owner </td> <td> $tst_created_on </td> </tr>};
     }
     print q{</table>};
 
@@ -126,7 +135,7 @@ sub DISPLAY {
     link_css();
     print "</head>" . "\n";
     print "<body>";
-    top_menu($SESSION{'sid'});
+    top_menu($DBH, $SESSION{'userid'}, $SESSION{'sid'});
 
     print qq{<form action="test-schedule.pl?sid=$SESSION{'sid'}" method="post">};
     print qq{<input type="hidden" name="sid" value="$SESSION{'sid'}" />};

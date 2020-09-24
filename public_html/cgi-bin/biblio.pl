@@ -132,7 +132,7 @@ sub MAIN {
 
     print "<body>";
 
-    top_menu($FORM{'sid'});
+    top_menu($DBH, $SESSION{'userid'}, $FORM{'sid'});
 
     # print_hash($form_href);
 

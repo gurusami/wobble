@@ -72,7 +72,7 @@ sub html_select_qtype {
 
     my $html = q{<select name="qtype">};
 
-    my $query = "SELECT qst_type_id, qst_type_name FROM ry_qst_types";
+    my $query = "SELECT qst_type_id, qst_type_name FROM ry_qst_types ORDER BY qst_type_id";
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
     $stmt->execute() or die $dbh->errstr;
 
@@ -341,6 +341,7 @@ sub display_answer_2 {
 
 }
 
+# This function is valid only for question type of 2. (MCQUNIQ).
 sub display_choices {
     my $dbh = shift;
     my $qid = shift;

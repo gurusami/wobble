@@ -60,7 +60,7 @@ sub DISPLAY {
 
     print "<body>";
 
-    top_menu($SESSION{'sid'});
+    top_menu($DBH, $SESSION{'userid'}, $SESSION{'sid'});
 
     print q[<table>];
     print q[<tr> <th> Qid </th> <th> Parent </th> <th> Q-Type </th> <th> Question </th> </tr>];

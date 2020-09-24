@@ -214,7 +214,7 @@ sub DISPLAY {
 
     print "<body>";
 
-    top_menu($SESSION{'sid'});
+    top_menu($DBH, $SESSION{'userid'}, $SESSION{'sid'});
 
     # At this point we have a valid qid, either old or new.  Lets tinker it!
 
@@ -249,8 +249,6 @@ sub DISPLAY {
 
     print "<hr>";
 
-    display_log();
-
     if (defined $FORM{'qid'} && $FORM{'qid'} > 0) {
         display_question($DBH, $qrow_href, $SESSION{'sid'});
 
@@ -259,9 +257,10 @@ sub DISPLAY {
             display_question_images($DBH, $FORM{'qid'}, $SESSION{'sid'});
         }
 
-        display_choices($DBH, $FORM{'qid'});
-
         if (defined $qrow_href) {
+            if (defined $QROW{'qtype'} && $QROW{'qtype'} == 2) {
+                display_choices($DBH, $FORM{'qid'});
+            }
             if (defined $QROW{'qtype'} && $QROW{'qtype'} == 1) {
                 display_answer_1($SESSION{'sid'}, $answer1_row_href);
             } else {
@@ -289,6 +288,7 @@ sub MAIN {
     my $s_ref = CHECK_SESSION($DBH, $FORM{'sid'});
     %SESSION = %{$s_ref};
 
+    CHECK_AUTH($DBH, $SESSION{'sid'}, $ENV{'SCRIPT_NAME'}, $SESSION{'userid'});
     PROCESS();
     DISPLAY();
     DTOR();

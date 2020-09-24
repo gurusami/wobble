@@ -116,7 +116,7 @@ sub DISPLAY {
 
     print "</head>" . "\n";
     print "<body>";
-    top_menu($SESSION{'sid'});
+    top_menu($DBH, $SESSION{'userid'}, $SESSION{'sid'});
 
     print q{
 <h2> List of Tests To Be Validated </h2>

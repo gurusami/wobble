@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # Created: Mon 14 Sep 2020 01:20:01 PM IST
-# Last Modified: Tue 15 Sep 2020 12:11:33 PM IST
+# Last Modified: Thu 24 Sep 2020 10:10:05 PM IST
 # Time-stamp: <2020-09-09 13:41:07 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
@@ -60,7 +60,7 @@ sub DISPLAY {
     link_css();
     print "</head>" . "\n";
     print "<body>";
-    top_menu($SESSION{'sid'});
+    top_menu($DBH, $SESSION{'userid'}, $SESSION{'sid'});
 
     my $qs = qq[image-view.pl?sid=$SESSION{'sid'}];
 

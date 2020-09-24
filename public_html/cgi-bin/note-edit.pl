@@ -64,7 +64,7 @@ sub DISPLAY {
     print "<title> Create a New Test </title>";
     print "</head>" . "\n";
     print "<body>";
-    top_menu($SESSION{'sid'});
+    top_menu($DBH, $SESSION{'userid'}, $SESSION{'sid'});
 
     if (! defined $FORM{'note_id'}) {
     print qq{

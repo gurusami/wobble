@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # Created: Mon 14 Sep 2020 10:39:48 PM IST
-# Last Modified: Wed 23 Sep 2020 05:54:02 PM IST
+# Last Modified: Thu 24 Sep 2020 10:23:25 PM IST
 # Time-stamp: <2020-09-10 06:27:50 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
@@ -176,15 +176,23 @@ sub read_get_data {
 }
 
 sub top_menu {
-  my $sid = shift;
-  print qq{
-  <div class="top-menu">
-    <ul id="menu">
-      <li> [<a href="menu.pl?sid=$sid">Main Menu</a>] </li>
-      <li> [<a href="logout.pl?sid=$sid">Logout</a>] </li>
-    </ul>
-  </div>
-};
+    my $dbh = shift;
+    my $userid = shift;
+    my $sid = shift;
+
+    print qq{
+        <div class="top-menu">
+            <ul id="menu">
+            <li> [<a href="menu.pl?sid=$sid">Main Menu</a>] </li>
+    };
+    IF_AUTH_LINK2($dbh, $userid, $sid, "tinker.pl", "Tinker");
+
+    print qq{
+        <li> [<a href="list-mytests.pl?sid=$sid">My Tests</a>] </li>
+            <li> [<a href="logout.pl?sid=$sid">Logout</a>] </li>
+            </ul>
+            </div>
+    };
 }
 
 sub login_url {
@@ -237,6 +245,8 @@ sub CHECK_SESSION {
 }
 
 sub AUTH_FAILED {
+    my $dbh = shift;
+    my $userid = shift;
     my $sid = shift;
     
     print "<html>";
@@ -244,7 +254,7 @@ sub AUTH_FAILED {
     print "<title> Create a New Test </title>";
     print "</head>" . "\n";
     print "<body>";
-    top_menu($sid);
+    top_menu($dbh, $userid, $sid);
     print qq{<p> You are not authorized. </p>};
     print "</body>";
     print "</html>";
@@ -257,12 +267,12 @@ sub CHECK_AUTH {
     my $sid = shift;
     my $script = shift;
     my $userid = shift;
-    
+
     $script =  basename($script);
     my $is_allowed = check_acl($dbh, $userid, $script);
 
     if ($is_allowed == 0) {
-	AUTH_FAILED($sid);
+        AUTH_FAILED($dbh, $userid, $sid);
     }
 }
 
@@ -328,6 +338,30 @@ sub html_select_refs {
 
 sub nl{
     print "\n";
+}
+
+sub IF_AUTH_LINK {
+    my $dbh = shift;
+    my $userid = shift;
+    my $sid = shift;
+    my $script = shift;
+    my $text = shift;
+
+    if (check_acl($dbh, $userid, $script)) {
+        print qq[<li> <a href="$script?sid=$sid"> $text </a> </li>];
+    }
+}
+
+sub IF_AUTH_LINK2 {
+    my $dbh = shift;
+    my $userid = shift;
+    my $sid = shift;
+    my $script = shift;
+    my $text = shift;
+
+    if (check_acl($dbh, $userid, $script)) {
+        print qq{<li> [<a href="$script?sid=$sid"> $text </a>] </li>};
+    }
 }
 
 1;

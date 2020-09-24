@@ -172,7 +172,7 @@ sub DISPLAY {
     print "</head>";
     print "<body>";
 
-    top_menu($SESSION{'sid'});
+    top_menu($DBH, $SESSION{'userid'}, $SESSION{'sid'});
 
     print qq{
 <h1> Add an MCQ (Question of Type 1) </h1>

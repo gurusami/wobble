@@ -252,7 +252,7 @@ sub DISPLAY {
 
     print "<body>";
 
-    top_menu($SESSION{'sid'});
+    top_menu($DBH, $SESSION{'userid'}, $SESSION{'sid'});
 
     create_or_update_test();
 

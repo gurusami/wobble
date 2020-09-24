@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # Created: Wed 16 Sep 2020 11:26:33 AM IST
-# Last-Modified: Wed 16 Sep 2020 12:33:06 PM IST
+# Last-Modified: Thu 24 Sep 2020 10:09:33 PM IST
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 #
 ###########################################################################
@@ -94,7 +94,7 @@ sub DISPLAY {
 
     print "</head>" . "\n";
     print "<body>";
-    top_menu($SESSION{'sid'});
+    top_menu($DBH, $SESSION{'userid'}, $SESSION{'sid'});
 
     defined $FORM{'qid'} || die "<p> No QID given </p>";
     defined $FORM{'sid'} || die "<p> No Session ID given </p>";

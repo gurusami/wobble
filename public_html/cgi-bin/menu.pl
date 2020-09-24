@@ -28,16 +28,6 @@ sub COLLECT {
     %FORM = %{$form_href};
 }
 
-sub IF_AUTH_LINK {
-    my $script = shift;
-    my $text = shift;
-
-    if (check_acl($DBH, $SESSION{'userid'}, $script)) {
-	print qq[<li> <a href="$script?sid=$SESSION{'sid'}"> $text </a> </li>];
-    }
-    
-}
-
 sub MAIN {
     CTOR();
     COLLECT();
@@ -54,23 +44,26 @@ sub MAIN {
 
     print "<body>";
 
-    top_menu($FORM{'sid'});
+    my $userid = $SESSION{'userid'};
+    my $sid = $SESSION{'sid'};
+
+    top_menu($DBH, $userid, $sid);
     
     print "<ul>";
-    IF_AUTH_LINK("browse.pl", "Browse Questions");
+    IF_AUTH_LINK($DBH, $userid, $sid, "browse.pl", "Browse Questions");
     # IF_AUTH_LINK("addmcq.pl", "Add Type 1 Question (MCQ)");
-    IF_AUTH_LINK("tinker.pl", "Tinker a Question");
-    IF_AUTH_LINK("biblio.pl", "Register a Reference/Bibliography");
-    IF_AUTH_LINK("create-test.pl", "Create/Modify/List Tests");
-    IF_AUTH_LINK("test-schedule.pl", "Schedule a Test");
-    IF_AUTH_LINK("list-test-sch.pl", "List ALL Scheduled Tests");
-    IF_AUTH_LINK("list-mytests.pl", "List My Tests");
-    IF_AUTH_LINK("test-reports.pl", "My Test Reports");
-    IF_AUTH_LINK("test-reports-all.pl", "ALL Test Reports");
-    IF_AUTH_LINK("note-edit.pl", "Edit a Note");
-    IF_AUTH_LINK("image-upload.pl", "Upload an image");
-    IF_AUTH_LINK("image-view.pl", "View an image");
-    IF_AUTH_LINK("validate.pl", "List Tests That I Need To Validate");
+    IF_AUTH_LINK($DBH, $userid, $sid, "tinker.pl", "Tinker a Question");
+    IF_AUTH_LINK($DBH, $userid, $sid, "biblio.pl", "Register a Reference/Bibliography");
+    IF_AUTH_LINK($DBH, $userid, $sid, "create-test.pl", "Create/Modify/List Tests");
+    IF_AUTH_LINK($DBH, $userid, $sid, "test-schedule.pl", "Schedule a Test");
+    IF_AUTH_LINK($DBH, $userid, $sid, "list-test-sch.pl", "List ALL Scheduled Tests");
+    IF_AUTH_LINK($DBH, $userid, $sid, "list-mytests.pl", "List My Tests");
+    IF_AUTH_LINK($DBH, $userid, $sid, "test-reports.pl", "My Test Reports");
+    IF_AUTH_LINK($DBH, $userid, $sid, "test-reports-all.pl", "ALL Test Reports");
+    IF_AUTH_LINK($DBH, $userid, $sid, "note-edit.pl", "Edit a Note");
+    IF_AUTH_LINK($DBH, $userid, $sid, "image-upload.pl", "Upload an image");
+    IF_AUTH_LINK($DBH, $userid, $sid, "image-view.pl", "View an image");
+    IF_AUTH_LINK($DBH, $userid, $sid, "validate.pl", "List Tests That I Need To Validate");
     print "</ul>";
     print "</body>";
 

@@ -103,7 +103,7 @@ sub DISPLAY {
     link_css();
     print "</head>" . "\n";
     print "<body>";
-    top_menu($SESSION{'sid'});
+    top_menu($DBH, $SESSION{'userid'}, $SESSION{'sid'});
 
     list_scheduled_tests();
     print "</body>";

@@ -527,6 +527,16 @@ sub insert_new_test {
     return last_insert_id($dbh);
 }
 
+sub make_test_active {
+    my $dbh = shift;
+    my $tst_id = shift;
+
+    my $query = "UPDATE $TABLE{'tests'} SET tst_state = 2 WHERE tst_id = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tst_id) or die $dbh->errstr();
+    $stmt->finish();
+}
+
 sub update_test {
     my $dbh = shift;
     my $tst_id = shift;
