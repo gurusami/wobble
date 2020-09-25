@@ -55,12 +55,21 @@ sub PROCESS {
     }
 }
 
+sub local_css()
+{
+    print qq{
+<style>
+</style>
+};
+}
+
 sub DISPLAY {
     print "<html>";
     print "<head>";
     print "<title> Create a New Test </title>";
 
     link_css();
+    local_css();
 
     print "</head>" . "\n";
     print "<body>";

@@ -1,4 +1,10 @@
 #!/usr/bin/perl
+#
+# Created: Fri 25 Sep 2020 12:02:01 PM IST
+# Last-Updated: Fri 25 Sep 2020 12:02:01 PM IST
+# Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
+#
+# Colors Used: 99b9ff, e6eeff, bcd4e6, ccdcff, 4f86f7
 
 use strict;
 use warnings;
@@ -12,84 +18,125 @@ my %FORM;
 my $DBH;
 my $ref_id = 0;
 
+sub display_references {
+    my $query = q{SELECT ref_id, ref_nick, ref_type, ref_author, ref_title, ref_isbn10, ref_isbn13 FROM ry_biblio ORDER BY ref_id};
+    my $stmt = $DBH->prepare($query) or die $DBH->errstr();
+    $stmt->execute() or die $DBH->errstr();
+
+    print qq{
+        <div id="biblio">
+            <h2 align="center"> Bibliography References </h2>
+            <table>
+            <tr>
+            <th> Ref ID </th>
+            <th> Nick Name </th>
+            <th> Author </th>
+            <th> Title </th>
+            <th> ISBN10 </th>
+            <th> ISBN13 </th>
+            </tr>
+    };
+
+    while (my $row_href = $stmt->fetchrow_hashref()) {
+        my %ROW = %{$row_href};
+        print qq{
+            <tr id="rows">
+                <td> $ROW{'ref_id'} </td>
+                <td> $ROW{'ref_nick'} </td>
+                <td> $ROW{'ref_author'} </td>
+                <td> $ROW{'ref_title'} </td>
+                <td> $ROW{'ref_isbn10'} </td>
+                <td> <a href="https://isbnsearch.org/isbn/$ROW{'ref_isbn13'}" target="_blank"> $ROW{'ref_isbn13'} </a></td>
+                </tr>
+        };
+    }
+
+    print qq {
+        </table>
+            </div>
+    };
+
+    $stmt->finish();
+}
+
 sub display_add_reference {
     print qq{
-    <div>
-	<h2> Add Reference </h2>
-	<form action="biblio.pl?sid=$FORM{'sid'}" method="post">
-	<table>
+        <div id="addbiblio">
+            <h2> Add Reference </h2>
+            <form action="biblio.pl?sid=$FORM{'sid'}" method="post">
+            <table>
 
-	<tr>
-	<td> Nick Name </td>
-	<td> <input type="text" name="ref_nick" value="" maxlength="10"/> </td>
-	</tr>
+            <tr>
+            <td> Nick Name </td>
+            <td> <input type="text" name="ref_nick" value="" maxlength="10"/> </td>
+            </tr>
 
-	<tr>
-	<td> Reference Type </td>
-	<td> <select name="ref_type"> 
-	<option value="1">Book</option>
-	<option value="2">Online</option>
-	<option value="3">Others</option>
-	</select>
-	</td>
-	</tr>
+            <tr>
+            <td> Reference Type </td>
+            <td> <select name="ref_type"> 
+            <option value="1">Book</option>
+            <option value="2">Online</option>
+            <option value="3">Others</option>
+            </select>
+            </td>
+            </tr>
 
-	<tr>
-	<td> Author(s) </td>
-	<td> <input type="text" name="ref_author" value="" size="50" maxlength="128" /></td>
-	</tr>
+            <tr>
+            <td> Author(s) </td>
+            <td> <input type="text" name="ref_author" value="" size="50" maxlength="128" /></td>
+            </tr>
 
-	<tr>
-	<td> Name of Series </td>
-	<td> <input type="text" name="ref_series" value="" size="50" maxlength="128" /></td>
-	</tr>
+            <tr>
+            <td> Name of Series </td>
+            <td> <input type="text" name="ref_series" value="" size="50" maxlength="128" /></td>
+            </tr>
 
-	<tr>
-	<td> Title </td>
-	<td> <input type="text" name="ref_title" value="" size="50" maxlength="128" /></td>
-	</tr>
+            <tr>
+            <td> Title </td>
+            <td> <input type="text" name="ref_title" value="" size="50" maxlength="128" /></td>
+            </tr>
 
-	<tr>
-	<td> ISBN 10 </td>
-	<td> <input type="text" name="ref_isbn10" value="" maxlength="10" /></td>
-	</tr>
+            <tr>
+            <td> ISBN 10 </td>
+            <td> <input type="text" name="ref_isbn10" value="" maxlength="10" /></td>
+            </tr>
 
-	<tr>
-	<td> ISBN 13 </td>
-	<td> <input type="text" name="ref_isbn13" value="" maxlength="13" /></td>
-	</tr>
+            <tr>
+            <td> ISBN 13 </td>
+            <td> <input type="text" name="ref_isbn13" value="" maxlength="13" /></td>
+            </tr>
 
-	<tr>
-	<td> Year of Publication </td>
-	<td> <input type="text" name="ref_year" value="" maxlength="4" /></td>
-	</tr>
+            <tr>
+            <td> Year of Publication </td>
+            <td> <input type="text" name="ref_year" value="" maxlength="4" /></td>
+            </tr>
 
-	<tr>
-	<td> Publisher </td>
-	<td> <input type="text" name="ref_publisher" value="" size="60" maxlength="128" /></td>
-	</tr>
+            <tr>
+            <td> Publisher </td>
+            <td> <input type="text" name="ref_publisher" value="" size="60" maxlength="128" /></td>
+            </tr>
 
-	<tr>
-	<td> Keywords </td>
-	<td> <input type="text" name="ref_keywords" value="" size="70" maxlength="128" /></td>
-	</tr>
+            <tr>
+            <td> Keywords </td>
+            <td> <input type="text" name="ref_keywords" value="" size="70" maxlength="128" /></td>
+            </tr>
 
-	<tr>
-	<td> URL </td>
-	<td> <input type="url" name="ref_url" value="" /></td>
-	</tr>
+            <tr>
+            <td> URL </td>
+            <td> <input type="url" name="ref_url" value="" /></td>
+            </tr>
 
-	<tr>
-	<td> Accessed </td>
-	<td> <input type="date" name="ref_accessed"/></td>
-	</tr>
+            <tr>
+            <td> Accessed </td>
+            <td> <input type="date" name="ref_accessed"/></td>
+            </tr>
 
-	</table>
+            </table>
 
-	<input type="hidden" name="sid" value="$SESSION{'sid'}" />
-	<input type="submit" name="ref_add" value="Add" />
-	</form>
-	</div>
+            <input type="hidden" name="sid" value="$SESSION{'sid'}" />
+            <input type="submit" name="ref_add" value="Add" />
+            </form>
+            </div>
     };
 
 }
@@ -114,6 +161,66 @@ sub DTOR {
     $DBH->disconnect();
 }
 
+sub local_css()
+{
+    print qq{
+<style>
+
+#addbiblio {
+    text-align: left;
+    border: 1px solid #99b9ff;
+    background-color: #e6eeff;
+    width: 90%;
+    margin-top: 20px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 20px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-top: 10px;
+}
+
+#biblio {
+    text-align: left;
+    border: 1px solid #99b9ff;
+    background-color: #e6eeff;
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 20px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-top: 10px;
+}
+
+#rows:nth-child(even) {
+    background-color: #ccdcff;
+}
+
+body {
+    background-color: #bcd4e6;
+    padding-bottom: 10px;
+    padding-top: 10px;
+}
+
+.top-menu {
+    border: 1px solid #4f86f7;
+    width: 90%;
+    margin-top: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-top: 10px;
+}
+
+</style>
+};
+}
+
 sub MAIN {
     CTOR();
     COLLECT();
@@ -126,8 +233,9 @@ sub MAIN {
     print "<!doctype html>";
     print "<html>";
     print "<head>";
-    print "<title> Manage References </title>";
+    print "<title> Wobble: Manage References </title>";
     link_css();
+    local_css();
     print "</head>";
 
     print "<body>";
@@ -137,6 +245,8 @@ sub MAIN {
     # print_hash($form_href);
 
     display_add_reference();
+
+    display_references();
 
     print "</body>";
 

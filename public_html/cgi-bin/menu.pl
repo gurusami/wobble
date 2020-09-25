@@ -38,7 +38,7 @@ sub MAIN {
     print "<!doctype html>";
     print "<html>";
     print "<head>";
-    print "<title> Main Menu </title>";
+    print "<title> Wobble: Main Menu </title>";
     link_css();
     print "</head>";
 
@@ -49,7 +49,11 @@ sub MAIN {
 
     top_menu($DBH, $userid, $sid);
     
-    print "<ul>";
+    print qq{
+<div id="main">
+<h2> Welcome </h2>
+<ul>
+};
     IF_AUTH_LINK($DBH, $userid, $sid, "browse.pl", "Browse Questions");
     # IF_AUTH_LINK("addmcq.pl", "Add Type 1 Question (MCQ)");
     IF_AUTH_LINK($DBH, $userid, $sid, "tinker.pl", "Tinker a Question");
@@ -64,8 +68,12 @@ sub MAIN {
     IF_AUTH_LINK($DBH, $userid, $sid, "image-upload.pl", "Upload an image");
     IF_AUTH_LINK($DBH, $userid, $sid, "image-view.pl", "View an image");
     IF_AUTH_LINK($DBH, $userid, $sid, "validate.pl", "List Tests That I Need To Validate");
-    print "</ul>";
-    print "</body>";
+    IF_AUTH_LINK($DBH, $userid, $sid, "qpapers.pl", "List of Available Question Papers");
+    print qq{
+</ul>
+</div>
+</body>
+};
 
     DTOR();
 }

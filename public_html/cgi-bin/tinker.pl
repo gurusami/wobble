@@ -44,11 +44,20 @@ my %SESSION;
 my $DBH;
 
 sub display_top {
-    print q[<div class="grid-container"> ];
+    print q[
+<div id="main">
+<h2 class="title"> Tinker A Question </h2>
+<div class="grid-container">
+];
+
+    
     display_tinker_form();
     display_add_question_form();
     display_create_given_qid();
-    print q[</div> <!-- class="grid-container" -->];
+    print q[
+</div> <!-- class="grid-container" -->
+</div>
+];
 };
 
 sub display_add_question_form {
@@ -64,13 +73,13 @@ sub display_add_question_form {
 
 sub display_tinker_form {
     print qq{
-    <div class="obtain_qid_form">
-    <form action="tinker.pl?sid=$SESSION{'sid'}" method="POST">
-	<input type="number" name="qid" />
-	<input type="hidden" name="sid" value="$SESSION{'sid'}" />
-	<input type="submit" name="form_tinker" value=\"Tinker\" />
-	</form>
-	</div>
+        <div class="obtain_qid_form">
+            <form action="tinker.pl?sid=$SESSION{'sid'}" method="POST">
+            <input type="number" name="qid" value="$FORM{'qid'}" />
+            <input type="hidden" name="sid" value="$SESSION{'sid'}" />
+            <input type="submit" name="form_tinker" value="Tinker" />
+            </form>
+            </div>
     };
 }
 
@@ -101,9 +110,13 @@ sub display_add_reference {
 };
 
 sub display_add_tag_form {
+    my $html_tags = html_show_tags($DBH, $FORM{'qid'});
+
     print qq[
 <div id="add_tag_form">
-    <h2> Add Tag </h2>
+    <h2> Tags </h2>
+    <p> $html_tags </p>
+
         <form action="tinker.pl?sid=$SESSION{'sid'}" method="post">
             <input type="hidden" name="sid" value="$SESSION{'sid'}" />
             <input type="hidden" name="qid" value="$FORM{'qid'}" />
@@ -246,8 +259,6 @@ sub DISPLAY {
     }
 
     display_top();
-
-    print "<hr>";
 
     if (defined $FORM{'qid'} && $FORM{'qid'} > 0) {
         display_question($DBH, $qrow_href, $SESSION{'sid'});

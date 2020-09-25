@@ -55,77 +55,74 @@ sub PROCESS {
     }
 }
 
-sub list_tests_to_validate {
-    my $query = q{
-SELECT c.username AS giver, b.username AS taker, a.sch_tst_id AS tid, d.exam_state_name AS state, a.sch_userid AS taker_id, e.tst_title as title
-FROM ry_test_schedule a, ry_users b, ry_users c, ry_exam_states d, ry_tests e
-WHERE a.sch_userid = b.userid
-AND a.sch_tst_id = e.tst_id
-AND c.userid = a.sch_tst_giver 
-AND a.sch_exam_state = d.exam_state_id
-AND a.sch_exam_state = ?
-AND a.sch_tst_giver = ?
+sub local_css()
+{
+    print qq{
+<style>
+</style>
 };
+}
 
-    # my $query = "SELECT * FROM ry_test_schedule WHERE sch_exam_state = ? AND sch_tst_giver = ?";
+sub show_ready_qpapers {
+    my $sid = $SESSION{'sid'};
+
+    my $query = qq{
+        SELECT * FROM ry_tests a, ry_test_states b, ry_test_types c WHERE a.tst_type = c.tst_type_id AND a.tst_state = b.tstate_id AND a.tst_state = 2
+    };
+
+    print qq{
+        <div id="main">
+        <h2 align="center"> List of Available Question Papers </h2>
+
+        <table>
+            <tr> <th> ID </th> <th> Test Type </th> <th> Test Title </th> <th> Total Questions </th> 
+                <th> Schedule </th>
+            </tr>
+    };
+
     my $stmt = $DBH->prepare($query) or die $DBH->errstr();
-    $stmt->execute(2, $SESSION{'userid'}) or die $DBH->errstr();
+    $stmt->execute() or die $DBH->errstr();
 
-    print q{
-<table>
-    <tr>
-        <th> Test Giver </th>
-        <th> Test Taker </th>
-        <th> Test ID </th>
-        <th> Test Title </th>
-        <th> Test State </th>
-        <th> Validate </th>
-    </tr>
-};
-
-    while (my $row_href = $stmt->fetchrow_hashref()) {
+    while (my ($row_href) = $stmt->fetchrow_hashref()) {
         my %ROW = %{$row_href};
 
         print qq{
-<tr>
-    <td> $ROW{'giver'} </td>
-    <td> $ROW{'taker'} </td>
-    <td> $ROW{'tid'} </td>
-    <td> $ROW{'title'} </td>
-    <td> $ROW{'state'} </td>
-    <td>
-        <form action="ticktest.pl?sid=$SESSION{'sid'}" method="post">
-        <input type="hidden" name="sid" value="$SESSION{'sid'}" />
-        <input type="hidden" name="tst_id" value="$ROW{'tid'}" />
-        <input type="hidden" name="taker" value="$ROW{'taker_id'}" />
-        <input type="submit" name="ticktest" value="Validate" />
-        </form>
-    </td>
-</tr>
-};
+            <tr id="rows">
+                <td> $ROW{'tst_id'} </td>
+                <td> $ROW{'tst_type_nick'} </td>
+                <td> $ROW{'tst_title'} </td>
+                <td> $ROW{'tst_qst_count'} </td>
+                <td>
+                    <form action="test-schedule.pl?sid=$sid" method="post">
+                        <input type="hidden" name="sid" value="$sid" />
+                        <input type="hidden" name="selected_tst_id" value="$ROW{'tst_id'}" />
+                        <input type="submit" name="schedule" value="Schedule" />
+                    </form>
+                </td>
+                </tr>
+        };
+
     }
 
-    print q{</table>};
-
-    $stmt->finish();
+    print qq{
+        </table>
+        </div>
+    };
 }
 
 sub DISPLAY {
     print "<html>";
     print "<head>";
-    print "<title> Wobble: List Tests To Be Validated </title>";
+    print "<title> Wobble: List of Available Question Papers </title>";
 
     link_css();
+    local_css();
 
     print "</head>" . "\n";
     print "<body>";
     top_menu($DBH, $SESSION{'userid'}, $SESSION{'sid'});
 
-    print q{
-<h2> List of Tests To Be Validated </h2>
-};
-
-    list_tests_to_validate();
+    show_ready_qpapers();
 
     print "</body>";
     print "</html>";

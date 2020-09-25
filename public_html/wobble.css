@@ -1,32 +1,141 @@
+
+:root {
+    --border-color: #99b9ff;
+    --dark-border-color: #417dc1;
+    --light-bg-color: #e6eeff;
+    --bg-color: #e6f2ff;
+    --dark-bg-color: #bcd4e6;
+    --table-stripe-color: #ccdcff;
+    --th-bg-color: #779ecb;
+    --status-bg-color: DodgerBlue;
+    --status-color: White;
+}
+
 html {
     background-color: LightSlateGray;
 }
 
 body {
-  background-color: #ffffe6;
+    height: 100%;
+    width: 95%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    background-color: var(--dark-bg-color);
+    padding-bottom: 10px;
+    padding-top: 10px;
+    border: 1px solid var(--thick-border-color);
 }
 
-.top-menu {
-  border: 1px solid;
-  background-color: #e6f2ff;
+table {
+    align: center;
+    border: 1px solid var(--border-color);
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-top: 10px;
 }
 
-#menu ul{
-  list-style: none;
-}
-#menu li{
-  display: inline;
+th {
+    background-color: var(--th-bg-color);
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-top: 10px;
 }
 
-.question {
-    background-color: honeydew;
-    border: 1px solid;
-    text-align: center;
-    width: 80%;
+td {
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-top: 10px;
+}
+
+div {
+    background-color: var(--bg-color);
+    width: 90%;
     margin-top: 20px;
     margin-bottom: 20px;
     margin-left: auto;
     margin-right: auto;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-top: 10px;
+}
+
+div.report-status {
+    background-color: var(--status-bg-color);
+    color: var(--status-color);
+    text-align: center;
+    margin-top: 1px;
+    margin-bottom: 1px;
+    margin-left: auto;
+    padding-top: 1px;
+    padding-bottom: 1px;
+    padding-left: 1px;
+    padding-right: 1px;
+    width: 80%;
+}
+
+ul.no-bullets {
+    list-style-type: none;
+}
+
+.top-menu {
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-top: 10px;
+}
+
+.title {
+    text-align: center;
+}
+
+#main {
+    width: 90%;
+    background-color: var(--light-bg-color);
+    border: 1px solid var(--border-color);
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-top: 10px;
+}
+
+#menu li {
+    list-style: none;
+    display: inline-block;
+}
+
+.question {
+    background-color: var(--light-bg-color);
+    border: 1px solid var(--border-color);
+    text-align: left;
+    width: 90%;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 20px;
+    padding-top: 20px;
+    padding-bottom: 20px;
 }
 
 .question_images {
@@ -34,9 +143,9 @@ body {
     margin-left: auto;
     margin-right: auto;
     background-color: honeydew;
-    border: 1px solid;
+    border: 1px solid var(--border-color);
     text-align: center;
-    width: 80%;
+    width: 90%;
 }
 
 .show_image {
@@ -44,7 +153,7 @@ body {
 }
 
 #tinker div {
-    border: 2px solid;
+    border: 2px solid var(--border-color);
     margin-top: 20px;
     margin-bottom: 20px;
     margin-left: auto;
@@ -56,8 +165,15 @@ body {
 }
 
 .grid-container {
+    border: 1px solid var(--border-color);
+    background-color: var(--dark-bg-color);
+    width: 90%;
     display: grid;
     grid-template-columns: auto auto auto;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .obtain_qid_form {
@@ -71,12 +187,20 @@ body {
     padding-right: 10px;
 }
 
-#add_tag_form div {
-    border: 1px solid;
-    background-color: tomato;
+
+#add_tag_form {
+    border: 1px solid var(--border-color);
     margin-top: 20px;
     margin-bottom: 20px;
     margin-left: auto;
     margin-right: auto;
 }
 
+#rows:nth-child(even) {
+    background-color: var(--table-stripe-color);
+}
+
+#choice_table {
+    align: left;
+    border: none;
+}

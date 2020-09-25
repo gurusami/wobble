@@ -85,11 +85,12 @@ sub show_existing_tests {
             FROM ry_tests a, ry_test_types b, ry_users u
             WHERE a.tst_type = b.tst_type_id
             AND   u.userid = tst_owner
+            AND   u.userid = ?
             ORDER BY tst_id DESC
     };
 
     my $stmt = $DBH->prepare($query);
-    $stmt->execute();
+    $stmt->execute($SESSION{'userid'});
 
     print q{<hr>
         <h2 align="center"> List of Available Tests </h2>
@@ -107,42 +108,39 @@ sub show_existing_tests {
             </tr>
     };
 
-    while (my ($tst_id, $tst_type_id, $tst_type_nick, $tst_owner, $tst_owner_name, $tst_created_on, $tst_qst_count, $tst_title) = $stmt->fetchrow()) {
+    while (my ($tst_id, $tst_type_id, $tst_type_nick, $tst_owner,
+                $tst_owner_name, $tst_created_on, $tst_qst_count, $tst_title)
+            = $stmt->fetchrow()) {
 
         print qq{<tr>};
 
         print qq{<td align="center"> $tst_id </td> <td> $tst_type_nick </td> <td> $tst_title </td> <td align="center"> $tst_qst_count </td>
-                <td> $tst_owner_name </td> <td> $tst_created_on </td> <td>
+            <td> $tst_owner_name </td> <td> $tst_created_on </td> <td>
         };
 
-        if ($tst_owner eq $SESSION{'userid'}) {
-            print qq{
-                <form action="maketest.pl?sid=$SESSION{'sid'}" method="post">
-                    <input type="hidden" name="sid" value="$SESSION{'sid'}" />
-                    <input type="hidden" name="tst_id" value="$tst_id" />
-                    <input type="submit" name="make_test" value="Prepare" />
-                    </form>
-            };
-        }
+        print qq{
+            <form action="maketest.pl?sid=$SESSION{'sid'}" method="post">
+                <input type="hidden" name="sid" value="$SESSION{'sid'}" />
+                <input type="hidden" name="tst_id" value="$tst_id" />
+                <input type="submit" name="make_test" value="Prepare" />
+                </form>
+        };
 
         print q{</td> <td>};
 
-        if ($tst_owner eq $SESSION{'userid'}) {
-            print qq{
-                <form action="create-test.pl?sid=$SESSION{'sid'}" method="post">
-                    <input type="hidden" name="sid" value="$SESSION{'sid'}" />
-                    <input type="hidden" name="tst_id" value="$tst_id" />
-                    <input type="hidden" name="tst_type" value="$tst_type_id" />
-                    <input type="hidden" name="tst_title" value="$tst_title" />
-                    <input type="submit" name="modify_test" value="Modify" />
-                    </form>
-            };
-        }
+        print qq{
+            <form action="create-test.pl?sid=$SESSION{'sid'}" method="post">
+                <input type="hidden" name="sid" value="$SESSION{'sid'}" />
+                <input type="hidden" name="tst_id" value="$tst_id" />
+                <input type="hidden" name="tst_type" value="$tst_type_id" />
+                <input type="hidden" name="tst_title" value="$tst_title" />
+                <input type="submit" name="modify_test" value="Modify" />
+                </form>
+        };
 
         print q{
             </td> </tr>
         };
-
     }
 
     print q{

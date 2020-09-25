@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+use HTML::Entities ();
 
 require './model.pl';
 
@@ -119,11 +120,12 @@ sub display_question {
     my $html_qsrc = html_select_refs($dbh, "qsrc_ref", $ROW{'qsrc_ref'});
     my $html_tags = html_show_tags($dbh, $ROW{'qid'});
     my $html_qtype = html_select_qtype($dbh, $ROW{'qtype'});
+    my $html_qst = HTML::Entities::encode($ROW{'qhtml'});
 
     print qq{
 <div class="question">
     <h2> Question </h2>
-    <p> $ROW{'qhtml'} </p>
+    <p style="margin-left: 20px;" align="left"> $ROW{'qhtml'} </p>
     $html_tags
 </div> <!-- question -->
 
@@ -149,7 +151,7 @@ sub display_question {
 
             <tr>
             <td> <p> Question (in HTML format) </p> </td>
-            <td> <textarea name="qhtml" cols="80" rows="10">$ROW{'qhtml'}</textarea> </td>
+            <td> <textarea name="qhtml" cols="80" rows="10">$html_qst</textarea> </td>
             </tr>
 
 <tr>

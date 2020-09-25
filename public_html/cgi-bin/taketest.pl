@@ -166,29 +166,27 @@ sub show_test_result() {
     
 sub show_test_details {
     print qq{
-    <ul id="menu">
-	<li> [Test ID: $SESSION{'tst_id'}] </li>
-	<li> Test Title: $SESSION{'tst_title'} </li>
-	<li> Total Questions: $SESSION{'tst_qst_count'} </li>
-	<li> Current Question: $FORM{'cur_seq'} </li>
+        <div class="test-details-container">
+            <div class="title"> Test ID: $SESSION{'tst_id'} </div>
+            <div class="title"> Test Title: $SESSION{'tst_title'} </div>
+            <div class="title"> Total Questions: $SESSION{'tst_qst_count'} </div>
+            <div class="title"> Current Question: $FORM{'cur_seq'} </div>
+            <div class="title">
     };
 
     if ($SESSION{'test_submitted'} == 0) {
-	print qq{
-	<li>
-	    <form action="taketest.pl" method="post">
-	    <input type="hidden" name="sid" value="$SESSION{'sid'}" />
-	    <input type="hidden" name="tst_id" value="$SESSION{'tst_id'}" />
-	    <input type="submit" name="locktest" value="Submit Test" />
-	    </form>
-	    </li>
-	};
+        print qq{
+                <form action="taketest.pl" method="post">
+                <input type="hidden" name="sid" value="$SESSION{'sid'}" />
+                <input type="hidden" name="tst_id" value="$SESSION{'tst_id'}" />
+                <input type="submit" name="locktest" value="Submit Test" />
+                </form>
+        };
     }	
-    print q{</ul>};
-
-    if ($SESSION{'test_submitted'} == 1) {
-	# show_test_result();
-    }
+    print q{
+        </div>
+        </div> <!-- test-details-container -->
+    };
 }
 
 sub show_numberbox_for_answer {
@@ -258,7 +256,7 @@ sub show_choices {
 
         my $user_choice = $FORM{'choice'};
 
-        print qq{<table>};
+        print qq{<ul class="no-bullets">};
         while (my ($chid, $choice_html) = $stmt->fetchrow())
         {
             my $cell_val;
@@ -286,12 +284,11 @@ sub show_choices {
             }
 
             print qq{
-                <tr> 
-                    <td> $cell_val </td>
-                    <td> $choice_html </td>
-                    </tr> };
+                <li> 
+                    $cell_val $choice_html
+                    </li> };
         }
-        print qq{</table>};
+        print qq{</ul>};
 
     }
 
@@ -316,25 +313,49 @@ sub local_css {
     print qq{
 <style>
 
-.submit-container {
-    border: 1px solid tan;
-    background-color: wheat;
-    display: grid;
-    grid-template-columns: auto auto auto;
-    position: fixed;
-    bottom: 5%;
-    width: 90%;
-    align: center;
-    margin-left: 5%;
-    margin-right: 5%;
-    text-align: center;
-    padding-top: 10px;
-    padding-bottom: 10px;
+ul.no-bullets {
+    list-style-type: none;
 }
 
-#next-q div {
-    background-color: red;
+.test-details-container {
+    display: grid;
+    grid-column-gap: 1px;
+    background-color: var(--light-bg-color);
+    grid-template-columns: auto auto auto auto auto;
 }
+
+.submit-container {
+    display: grid;
+    background-color: var(--dark-bg-color);
+    grid-template-columns: auto auto auto;
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    padding-left: 2px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    margin-bottom: 1px;
+    height: auto;
+}
+
+#choice_table {
+    align: left;
+    border: none;
+    text-align: left;
+    width: 100%;
+}
+
+div.title {
+    display: table-cell;
+    vertical-align: middle;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    height: auto;
+}
+
 </style>
 };
 
@@ -343,7 +364,7 @@ sub local_css {
 sub doc_begin {
     print "<html>";
     print "<head>";
-    print "<title> Take a Test </title>";
+    print "<title> Wobble: Take a Test </title>";
     link_css();
     local_css();
     print "</head>" . "\n";
@@ -355,17 +376,31 @@ sub doc_end {
     print q{</body></html>};
 }
 
+sub display_status {
+    if (defined $FORM{'answer'}) {
+        print qq{
+            <div class="report-status">
+                <h3> Answer submitted successfully. </h3>
+                </div>
+        };
+    }
+}
+
 sub DISPLAY {
     doc_begin();
     show_test_details();
+    display_status();
 
     print qq{
         <form action="taketest.pl?sid=$SESSION{'sid'}" method="POST">
+        <div>
     };
+
 
     show_mcq();
 
     print qq{
+        </div>
         <input type="hidden" name="sid" value="$SESSION{'sid'}" />
             <input type="hidden" name="cur_seq" value="$FORM{'cur_seq'}" />
             <input type="hidden" name="tst_id" value="$FORM{'tst_id'}" />
@@ -397,7 +432,7 @@ sub DISPLAY {
     <div>
         <input type="submit" name="answer" value="Submit Answer" $answer_disable />
     </div>
-    <div id="next-q">
+    <div>
         <input type="submit" name="next" value="Next Question" $next_disable />
     </div>
 </div>

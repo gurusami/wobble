@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # Created: Mon 14 Sep 2020 10:39:48 PM IST
-# Last Modified: Thu 24 Sep 2020 10:23:25 PM IST
+# Last Modified: Fri 25 Sep 2020 01:42:12 PM IST
 # Time-stamp: <2020-09-10 06:27:50 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
@@ -185,7 +185,9 @@ sub top_menu {
             <ul id="menu">
             <li> [<a href="menu.pl?sid=$sid">Main Menu</a>] </li>
     };
+
     IF_AUTH_LINK2($dbh, $userid, $sid, "tinker.pl", "Tinker");
+    IF_AUTH_LINK2($dbh, $userid, $sid, "biblio.pl", "Bibliography");
 
     print qq{
         <li> [<a href="list-mytests.pl?sid=$sid">My Tests</a>] </li>
@@ -348,7 +350,9 @@ sub IF_AUTH_LINK {
     my $text = shift;
 
     if (check_acl($dbh, $userid, $script)) {
-        print qq[<li> <a href="$script?sid=$sid"> $text </a> </li>];
+        print qq[
+            <li> <a href="$script?sid=$sid"> $text </a> </li>
+        ];
     }
 }
 
