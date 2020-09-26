@@ -152,26 +152,6 @@ sub COLLECT {
     %FORM = %{$form_href};
 }
 
-# sub get_answers {
-#     my @answer;
-
-#     for (my $i = 1; $i < 5; $i++) {
-# 	my $name = "check_choice" . $i;
-
-# 	if ($FORM{$name}) {
-# 	    if ($FORM{$name} eq "true") {
-# 		push @answer, 1;
-# 	    } else {
-# 		push @answer, 0;
-# 	    }
-# 	} else {
-# 	    push @answer, 0;
-# 	}
-#     }
-
-#     return @answer;
-# };
-
 sub CTOR {
     $DBH = db_connect();
 }
@@ -281,9 +261,9 @@ sub DISPLAY {
 
         display_parent($DBH, $qrow_href);
         display_add_tag_form();
-        display_references($DBH);
-        display_add_reference();
-        display_add_note();
+        # display_references($DBH);
+        # display_add_reference();
+        # display_add_note();
     }
 
     print "</body>";

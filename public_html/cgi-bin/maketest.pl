@@ -56,11 +56,11 @@ sub show_test_details {
     my $sid = $SESSION{'sid'};
     my $disable = "";
     my $query = q{
-SELECT tst_id, tst_qst_count, tst_type, tst_title, tst_owner, tst_created_on, b.tstate_nick AS tst_state_nick, a.tst_state
-FROM ry_tests a, ry_test_states b
-WHERE a.tst_state = b.tstate_id
-AND tst_id = ?
-};
+        SELECT tst_id, tst_qst_count, tst_type, tst_title, tst_owner, tst_created_on, b.tstate_nick AS tst_state_nick, a.tst_state
+            FROM ry_tests a, ry_test_states b
+            WHERE a.tst_state = b.tstate_id
+            AND tst_id = ?
+    };
     my $stmt = $DBH->prepare($query) or die $DBH->errstr();
     $stmt->execute($FORM{'tst_id'}) or die $DBH->errstr();
     my ($tst_id, $tst_qst_count, $tst_type, $tst_title, $tst_owner, $tst_created_on, $tst_state_nick, $tst_state) = $stmt->fetchrow();
@@ -70,30 +70,34 @@ AND tst_id = ?
     }
 
     print qq{
-<h2 align="center"> Test Information </h2>
-<table align="center">
-    <tr>
-        <th> Test ID </th> <th> Question Count </th> <th> Type </th> <th> Title </th> <th> Owner </th> <th> Created On </th>
-        <th> State </th>
-        <th> Make Active </th>
-    </tr>
-    <tr>
-};
+        <div>
+            <h2 align="center"> Test Information </h2>
+            <table align="center">
+            <tr>
+            <th> Test ID </th> <th> Question Count </th> <th> Type </th> <th> Title </th> <th> Owner </th> <th> Created On </th>
+            <th> State </th>
+            <th> Make Active </th>
+            </tr>
+            <tr>
+    };
 
     print qq{
-<td> $tst_id </td> <td> $tst_qst_count </td> <td> $tst_type </td>
-<td> $tst_title </td> <td> $tst_owner </td> <td> $tst_created_on </td>
-    <td> $tst_state_nick </td>
-    <td>
-        <form action="maketest.pl?sid=$sid" method="post">
+        <td> $tst_id </td> <td> $tst_qst_count </td> <td> $tst_type </td>
+            <td> $tst_title </td> <td> $tst_owner </td> <td> $tst_created_on </td>
+            <td> $tst_state_nick </td>
+            <td>
+            <form action="maketest.pl?sid=$sid" method="post">
             <input type="hidden" name="sid" value="$sid" />
             <input type="hidden" name="tst_id" value="$tst_id" />
             <input type="submit" name="make_test_active" value="Make Active" $disable/>
-        </form>
-</td>
-};
+            </form>
+            </td>
+    };
     print q{</tr>};
-    print q{</table>} . "\n";
+    print q{
+        </table>
+            </div>
+    };
 }
 
 sub show_questions_in_test {
@@ -102,7 +106,11 @@ sub show_questions_in_test {
     my @qlist = @{$qlist_aref};
 
     my $N = 1 + $#qlist;
-    print qq{<h2 align="center"> Questions in Test (Total: $N) </h2>};
+
+    print qq{
+        <div>
+            <h2 align="center"> Questions in Test (Total: $N) </h2>
+    };
 
     if (@qlist > 0) {
         my $query = "SELECT qid, qtype, qhtml, b.qst_type_nick, c.ref_nick
@@ -139,7 +147,9 @@ sub show_questions_in_test {
             }
             print qq{</tr>};
         }
-        print q{</table>};
+        print q{
+            </table> </div>
+        };
     }
 }
 

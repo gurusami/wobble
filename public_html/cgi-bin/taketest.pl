@@ -212,8 +212,7 @@ sub show_numberbox_for_answer {
 };
 }
 
-sub show_textbox_for_answer()
-{
+sub show_textbox_for_answer() {
     my $sid = $SESSION{'sid'};
     my $userid = $SESSION{'userid'};
     my $tst_id = $SESSION{'tst_id'};
@@ -232,8 +231,8 @@ sub show_textbox_for_answer()
     }
 
     print qq{
-    <input type="text" size="80" name="give_answer_string" value="$given" $readonly/>
-};
+        <textarea rows="10" cols="80" name="give_answer_string" value="$given" $readonly/>
+    };
 }
 
 sub show_choices {
@@ -249,9 +248,6 @@ sub show_choices {
     if ($qtype == 1) {
         # The answer is to be given as a single integer
         show_numberbox_for_answer();
-    } elsif ($qtype == 4) {
-        # The answer is to be given as a string.
-        show_textbox_for_answer();
     } else {
 
         my $user_choice = $FORM{'choice'};
@@ -306,7 +302,12 @@ sub show_mcq {
     print qq{<h3> Question (QID: $qid) </h3>
 		 <p> $row{'qhtml'} </p>};
 
-    show_choices($row{'qtype'});
+    if ($row{'qtype'} == 4) {
+        # The answer is to be given as a string.
+        show_textbox_for_answer();
+    } else {
+        show_choices($row{'qtype'});
+    }
 }
 
 sub local_css {

@@ -43,7 +43,6 @@ my $DBH;
 
 # The Test Identifier
 my $tst_id = 0;
-my $tst_version;
 my $tst_title;
 my $title_in_doc;
 
@@ -59,54 +58,6 @@ sub newline {
     print $ofh "\n";
 }
 
-sub create_biblio_file {
-    my $bib_fh;
-    
-    open($bib_fh, ">", $bib_file) or die "Could not open file: $bib_file";
-    $bib_fh->autoflush(1);
-
-    my $query = "SELECT * from ry_biblio ORDER BY ref_id";
-    my $stmt = $DBH->prepare($query);
-    $stmt->execute();
-
-    while (my $row_href = $stmt->fetchrow_hashref()) {
-	my %ROW = %{$row_href};
-
-	if ($ROW{'ref_type'} == 1) {
-	    # It is a book.
-	    biblio_one_book_entry($bib_fh, $row_href);
-	    print $bib_fh "\n";
-	}
-    }
-    
-    close($bib_fh);
-}
-
-sub cite_for_qid {
-    my $qid = shift;
-
-    my $query = "SELECT bib.ref_nick FROM ry_biblio bib, ry_qid_ref ref WHERE ref.qid = ? AND ref.ref_id = bib.ref_id ORDER BY bib.ref_id";
-
-    my $stmt = $DBH->prepare($query);
-    $stmt->execute($qid);
-
-    while (my $row_href = $stmt->fetchrow_hashref()) {
-	my %ROW = %{$row_href};
-	print $ofh qq[\\cite{$ROW{'ref_nick'}}];
-
-	newline();
-    }
-}
-
-sub biblio_one_book_entry {
-    my $bib_fh = shift;
-    my $row_href = shift;
-    my %ROW = %{$row_href};
-
-    print $bib_fh q[@book{];
-    print $bib_fh qq[$ROW{'ref_nick'}, title = { $ROW{'ref_title'} }, author = {$ROW{'ref_author'}}, isbn = {$ROW{'ref_isbn13'}}, series = {$ROW{'ref_series'}}, year = {$ROW{'ref_year'}}, publisher = {$ROW{ref_publisher}}, keywords = {$ROW{'ref_keywords'}}}];
-}
-
 sub print_question {
     my $qrow_href = shift;
     my %QROW = %{$qrow_href};
@@ -115,36 +66,35 @@ sub print_question {
     my $qparent = $QROW{'qparent'};
     my $qtype = $QROW{'qtype'};
 
-    if ($qtype == 0) {
-	print_question_0($qrow_href);
-    } elsif ($qtype == 1) {
-	print_question_1($qrow_href);
+    if ($qtype == 1) {
+        print_question_1($qrow_href);
     } elsif ($qtype == 2) {
-	print_question_2($qrow_href);
+        print_question_2($qrow_href);
+    } elsif ($qtype == 3) {
+        print_question_3($qrow_href);
+    } elsif ($qtype == 4) {
+        print_question_4($qrow_href);
     } else {
-	die "Unknown Question Type";
+        die "Unknown Question Type";
     }
-
-    cite_for_qid($qid);
 };
 
-sub print_question_0 {
+sub print_question_1 {
     my $qrow_href = shift;
     my %QROW = %{$qrow_href};
     my $qid = $QROW{'qid'};
 
     print $ofh qq{\\item $QROW{'qlatex'}};
-    print $ofh qq{[QID:$qid]};
 
     if ($with_answer) {
-	my $query = "SELECT qid, qans FROM answer_1 WHERE qid = ?";
-	my $stmt = $DBH->prepare($query) or die $DBH->errstr();
-	$stmt->execute($qid);
-	my ($qid, $qans) = $stmt->fetchrow();
-	print $ofh q[\colorbox{yellow}{];
-        print $ofh q[\emph{Answer:}] . $qans . "}\n";
+        my $query = "SELECT qid, qans FROM answer_1 WHERE qid = ?";
+        my $stmt = $DBH->prepare($query) or die $DBH->errstr();
+        $stmt->execute($qid);
+        my ($qid, $qans) = $stmt->fetchrow();
+        print $ofh q[\colorbox{yellow}{];
+            print $ofh q[\emph{Answer:}] . $qans . "}\n";
 
-	push @answer_seq, $qans;
+            push @answer_seq, $qans;
     }
 }
 
@@ -162,13 +112,12 @@ sub print_answer_seq {
     newline();
 }
 
-sub print_question_1 {
+sub print_question_2 {
     my $qrow_href = shift;
     my %QROW = %{$qrow_href};
     my $qid = $QROW{'qid'};
     
     print $ofh qq{\\item $QROW{'qlatex'} };
-    print $ofh qq{[QID:$qid]};
 
     newline();
     
@@ -200,13 +149,12 @@ sub print_question_1 {
     newline();
 };
 
-sub print_question_2 {
+sub print_question_3 {
     my $row_href = shift;
     my %QROW = %{$row_href};
     my $qid = $QROW{'qid'};
 
     print $ofh qq{\\item $QROW{'qlatex'}};
-    print $ofh qq{[QID:$qid]};
 
     newline();
 
@@ -223,6 +171,15 @@ sub print_question_2 {
     }
     print $ofh qq{\\end{enumerate}};
 
+    newline();
+}
+
+sub print_question_4 {
+    my $row_href = shift;
+    my %QROW = %{$row_href};
+    my $qid = $QROW{'qid'};
+
+    print $ofh qq{\\item $QROW{'qlatex'}};
     newline();
 }
 
@@ -243,16 +200,18 @@ sub print_preamble{
 }
 
 sub get_test_info() {
-    my $query = "SELECT tst_version, tst_title FROM ry_tests WHERE tst_id = ?";
+    my $query = "SELECT * FROM ry_tests WHERE tst_id = ?";
     my $stmt = $DBH->prepare($query) or die $DBH->errstr();
     $stmt->execute($tst_id) or die $DBH->errstr();
 
-    if (($tst_version, $tst_title) = $stmt->fetchrow()) {
-    } else {
-	die "Given (Test-ID: $tst_id) not found."
-    }
+    my ($row_href) = $stmt->fetchrow_hashref();
 
-    $title_in_doc = qq{$tst_title [Test-ID: $tst_id.$tst_version]};
+    defined $row_href || die "Given (Test-ID: $tst_id) not found.";
+    my %ROW = %{$row_href};
+    $tst_title = $ROW{'tst_title'};
+    $title_in_doc = qq{$tst_title};
+
+    $stmt->finish();
 }
 
 sub print_all_questions {
@@ -262,13 +221,13 @@ sub print_all_questions {
     print $ofh q{\begin{enumerate}};
 
     newline();
-    
-    # prepare SQL statement
+
+# prepare SQL statement
     foreach my $qid (@qids)
     {
-	$stmt->execute($qid) or die "execution failed: $DBH->errstr()"; 
-	my $qrow_href = $stmt->fetchrow_hashref();
-	print_question($qrow_href);
+        $stmt->execute($qid) or die "execution failed: $DBH->errstr()"; 
+        my $qrow_href = $stmt->fetchrow_hashref();
+        print_question($qrow_href);
     }
 
     $stmt->finish();
@@ -276,7 +235,7 @@ sub print_all_questions {
 
 # Get output file name
 sub get_output_fname {
-    my $file_name = $prefix . "-$tst_id" . "-$tst_version";
+    my $file_name = $prefix . "-$tst_id";
 
     if ($with_answer) {
 	$file_name = $file_name . "-solved";
@@ -293,8 +252,8 @@ sub the_main() {
 			    'test-id=i' => \$tst_id);
 
     if ($tst_id == 0) {
-	die "No test identifier specified";
-	exit(0);
+        die "No test identifier specified";
+        exit(0);
     }
     
     $DBH = DBI->connect($dsn,$dbuser,$dbpasswd);
@@ -315,7 +274,7 @@ sub the_main() {
     $ofh->autoflush(1);
 
 
-    my $qid_aref = get_qid_in_tst($DBH, $tst_id, $tst_version);
+    my $qid_aref = get_qid_in_tst($DBH, $tst_id);
     @qids = @{$qid_aref};
 
     print_preamble();
@@ -331,14 +290,10 @@ sub the_main() {
 
     newline();
 
-    print $ofh q[\bibliography{ntse}{}];
-    print $ofh q[\bibliographystyle{apalike}];
-
     print $ofh q[\end{document}];
 
     close($ofh);
 
-    create_biblio_file();
     $DBH->disconnect();
 }
 

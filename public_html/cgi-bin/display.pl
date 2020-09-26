@@ -126,7 +126,6 @@ sub display_question {
 <div class="question">
     <h2> Question </h2>
     <p style="margin-left: 20px;" align="left"> $ROW{'qhtml'} </p>
-    $html_tags
 </div> <!-- question -->
 
         <div class="question">
@@ -174,12 +173,14 @@ sub display_question {
         <td> $html_qsrc </td>
     </tr>
 
-            </table>
 
-<p>
+<tr>
+    <td colspan="2" align="center">
     <input type="hidden" name="sid" value="$sid" />
     <input type="submit" name="UpdateQuestion" value="Update" />
-</p>
+    </td>
+</tr>
+            </table>
             </form>
             </div>
     };
