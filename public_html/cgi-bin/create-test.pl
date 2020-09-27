@@ -81,9 +81,11 @@ sub select_tst_type {
 
 sub show_existing_tests {
     my $query = q{
-        SELECT tst_id, a.tst_type, b.tst_type_nick AS tst_nick, u.userid as tst_owner_id, u.username AS tst_owner_name, tst_created_on, tst_qst_count, tst_title
-            FROM ry_tests a, ry_test_types b, ry_users u
+        SELECT tst_id, a.tst_type, b.tst_type_nick AS tst_nick, u.userid as tst_owner_id, u.username AS tst_owner_name, tst_created_on, tst_qst_count, tst_title, tstate_nick
+            FROM ry_tests a, ry_test_types b, ry_users u, ry_test_states d
             WHERE a.tst_type = b.tst_type_id
+            AND   a.tst_state = d.tstate_id
+            AND   a.tst_state = 1
             AND   u.userid = tst_owner
             AND   u.userid = ?
             ORDER BY tst_id DESC
@@ -103,19 +105,20 @@ sub show_existing_tests {
             <th> Number of Questions </th>
             <th> Owner </th>
             <th> Created On </th>
+            <th> State </th>
             <th> Prepare </th>
             <th> Modify </th>
             </tr>
     };
 
     while (my ($tst_id, $tst_type_id, $tst_type_nick, $tst_owner,
-                $tst_owner_name, $tst_created_on, $tst_qst_count, $tst_title)
+                $tst_owner_name, $tst_created_on, $tst_qst_count, $tst_title, $tstate_nick)
             = $stmt->fetchrow()) {
 
         print qq{<tr>};
 
         print qq{<td align="center"> $tst_id </td> <td> $tst_type_nick </td> <td> $tst_title </td> <td align="center"> $tst_qst_count </td>
-            <td> $tst_owner_name </td> <td> $tst_created_on </td> <td>
+            <td> $tst_owner_name </td> <td> $tst_created_on </td> <td> $tstate_nick <td>
         };
 
         print qq{

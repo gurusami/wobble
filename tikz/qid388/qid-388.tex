@@ -1,0 +1,27 @@
+\documentclass[tikz,convert={outfile=\jobname.svg}]{standalone}
+%\usetikzlibrary{...}% tikz package already loaded by 'tikz' option
+\begin{document}
+\begin{tikzpicture}
+\draw (0,0) circle [radius=3cm];
+\draw (0,0) circle [radius=2cm];
+\draw (0,3) -- (0, -3);
+\draw (-3, 0) -- (3, 0);
+\draw (45:2cm) -- (45:3cm);
+\draw (-45:2cm) -- (-45:3cm);
+\draw (135:2cm) -- (135:3cm);
+\draw (-135:2cm) -- (-135:3cm);
+\draw (22:2.5cm) node {4};
+\draw (67:2.5cm) node {3};
+\draw (112:2.5cm) node {5};
+\draw (158:2.5cm) node {7};
+\draw (202:2.5cm) node {2};
+\draw (248:2.5cm) node {8};
+\draw (292:2.5cm) node {1};
+\draw (338:2.5cm) node {5};
+\draw (135:1cm) node {144};
+\draw (-135:1cm) node {?};
+\draw (45:1cm) node {49};
+\draw (-45:1cm) node {36};
+\end{tikzpicture}
+
+\end{document}

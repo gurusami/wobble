@@ -1217,21 +1217,9 @@ sub add_tag {
     my $dbh = shift;
     my $userid = shift;
     my $qid = shift;
-    my $tag = shift;
-    my $tagid;
+    my $tag_id = shift;
 
-    $dbh->begin_work();    
-    my $tag_row_href = select_tag_row($dbh, $tag);
-
-    if (defined $tag_row_href) {
-        my %ROW = %{$tag_row_href};
-        $tagid = $ROW{'tg_tagid'};
-    } else {
-        $tagid = insert_tag($dbh, $userid, $tag);
-    }
-
-    insert_qst2tag($dbh, $userid, $qid, $tagid);
-    $dbh->commit();    
+    insert_qst2tag($dbh, $userid, $qid, $tag_id);
 }
 
 sub insert_tag {

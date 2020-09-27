@@ -82,7 +82,7 @@ CREATE TABLE `question` (
   CONSTRAINT `question_ibfk_1` FOREIGN KEY (`userid`) REFERENCES `ry_users` (`userid`),
   CONSTRAINT `question_ibfk_2` FOREIGN KEY (`qsrc_ref`) REFERENCES `ry_biblio` (`ref_id`),
   CONSTRAINT `question_ibfk_3` FOREIGN KEY (`qtype`) REFERENCES `ry_qst_types` (`qst_type_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=384 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=394 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -212,7 +212,8 @@ CREATE TABLE `ry_qst2tag` (
   UNIQUE KEY `q2t_tagid` (`q2t_tagid`,`q2t_qid`),
   KEY `q2t_userid` (`q2t_userid`),
   CONSTRAINT `ry_qst2tag_ibfk_1` FOREIGN KEY (`q2t_qid`) REFERENCES `question` (`qid`),
-  CONSTRAINT `ry_qst2tag_ibfk_2` FOREIGN KEY (`q2t_userid`) REFERENCES `ry_users` (`userid`)
+  CONSTRAINT `ry_qst2tag_ibfk_2` FOREIGN KEY (`q2t_userid`) REFERENCES `ry_users` (`userid`),
+  CONSTRAINT `ry_qst2tag_ibfk_3` FOREIGN KEY (`q2t_tagid`) REFERENCES `ry_tags` (`tg_tagid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -315,14 +316,15 @@ DROP TABLE IF EXISTS `ry_tags`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `ry_tags` (
   `tg_tagid` int unsigned NOT NULL AUTO_INCREMENT,
-  `tg_tag` char(64) NOT NULL,
-  `tg_details` text,
+  `tg_tag` char(8) NOT NULL,
+  `tg_tag_info` char(64) NOT NULL,
   `tg_userid` int NOT NULL,
   `tg_created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `tg_last_updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`tg_tagid`),
-  UNIQUE KEY `tg_tag` (`tg_tag`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  UNIQUE KEY `tg_tag` (`tg_tag_info`),
+  UNIQUE KEY `tg_tag_nick` (`tg_tag`)
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -465,7 +467,7 @@ CREATE TABLE `ry_tests` (
   UNIQUE KEY `tst_title` (`tst_title`),
   KEY `tst_state` (`tst_state`),
   CONSTRAINT `ry_tests_ibfk_1` FOREIGN KEY (`tst_state`) REFERENCES `ry_test_states` (`tstate_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -495,4 +497,4 @@ CREATE TABLE `ry_users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-09-26 23:21:33
+-- Dump completed on 2020-09-28  1:14:04

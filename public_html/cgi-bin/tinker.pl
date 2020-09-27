@@ -109,6 +109,43 @@ sub display_add_reference {
 
 };
 
+sub show_all_tags {
+    my $qid = $FORM{'qid'};
+    my $query = "SELECT * FROM ry_tags WHERE tg_tagid NOT IN (SELECT q2t_tagid FROM ry_qst2tag WHERE q2t_qid = ?) ORDER BY tg_tag";
+    my $stmt = $DBH->prepare($query) or die $DBH->errstr();
+    $stmt->execute($qid) or die $DBH->errstr();
+
+    print qq{<ul id="menu">};
+
+    while (my ($row_href) = $stmt->fetchrow_hashref()) {
+        my %ROW = %{$row_href};
+        print qq{<li>};
+        show_add_tag_button_form($ROW{'tg_tagid'},  $ROW{'tg_tag'});
+        print qq{ </li> };
+    }
+
+    print qq{</ul>};
+};
+
+sub show_add_tag_button_form {
+    my $tag_id = shift;
+    my $tag = shift;
+
+    my $sid = $SESSION{'sid'};
+    my $userid = $SESSION{'userid'};
+    my $qid = $FORM{'qid'};
+
+    print qq{
+        <form action="tinker.pl?sid=$sid" method="post">
+            <input type="hidden" name="sid" value="$sid" />
+            <input type="hidden" name="userid" value="$userid" />
+            <input type="hidden" name="qid" value="$qid" />
+            <input type="hidden" name="tag_id" value="$tag_id" />
+            <input type="submit" name="add_tag" value="$tag"/>
+            </form>
+    }
+}
+
 sub display_add_tag_form {
     my $html_tags = html_show_tags($DBH, $FORM{'qid'});
 
@@ -116,14 +153,11 @@ sub display_add_tag_form {
 <div id="add_tag_form">
     <h2> Tags </h2>
     <p> $html_tags </p>
+];
 
-        <form action="tinker.pl?sid=$SESSION{'sid'}" method="post">
-            <input type="hidden" name="sid" value="$SESSION{'sid'}" />
-            <input type="hidden" name="qid" value="$FORM{'qid'}" />
-            <input type="hidden" name="userid" value="$SESSION{'userid'}" />
-            <input type="text" name="tag" size="64" />
-            <input type="submit" name="add_tag" value="Add Tag"/>
-        </form>
+    show_all_tags();
+
+    print qq[
 </div> <!-- add_tag_form -->
 ];
 }
@@ -186,8 +220,8 @@ sub PROCESS {
         # The qid has been updated.  Nothing else to do.
         } elsif ($FORM{'add_ref'} && ($FORM{'add_ref'} eq "Add Reference")) {
             insert_qid_ref($DBH, $form_href);
-        } elsif (defined $FORM{'add_tag'} && ($FORM{'add_tag'} eq "Add Tag")) {
-            add_tag($DBH, $SESSION{'userid'}, $FORM{'qid'}, $FORM{'tag'});
+        } elsif (defined $FORM{'add_tag'}) {
+            add_tag($DBH, $SESSION{'userid'}, $FORM{'qid'}, $FORM{'tag_id'});
         } elsif (defined $FORM{'UpdateAnswerString'}) {
             modify_answer_string($DBH, $FORM{'qid'}, $FORM{'qans'});
         }
@@ -254,7 +288,9 @@ sub DISPLAY {
             }
             if (defined $QROW{'qtype'} && $QROW{'qtype'} == 1) {
                 display_answer_1($SESSION{'sid'}, $answer1_row_href);
-            } else {
+            } 
+
+            if (defined $QROW{'qtype'}) {
                 display_answer($DBH, $SESSION{'sid'}, $qrow_href);
             }
         }

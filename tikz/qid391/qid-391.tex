@@ -1,0 +1,28 @@
+\documentclass[tikz,convert={outfile=\jobname.svg}]{standalone}
+%\usetikzlibrary{...}% tikz package already loaded by 'tikz' option
+\begin{document}
+\begin{tikzpicture}
+\foreach \x in {0, 4, 8} {
+    \draw (\x, 0) circle (1cm);
+    \draw (\x, -1) -- (\x, 1);
+    \draw [xshift=\x cm] (-1, 0) -- (1, 0);
+}
+
+\draw (135:0.5cm) node {5};
+\draw (45:0.5cm) node {4};
+\draw (-45:0.5cm) node {9};
+\draw (-135:0.5cm) node {20};
+
+\draw [xshift=4cm] (135:0.5cm) node {3};
+\draw [xshift=4cm] (45:0.5cm) node {8};
+\draw [xshift=4cm] (-45:0.5cm) node {11};
+\draw [xshift=4cm] (-135:0.5cm) node {24};
+
+\draw [xshift=8cm] (135:0.5cm) node {9};
+\draw [xshift=8cm] (45:0.5cm) node {4};
+\draw [xshift=8cm] (-45:0.5cm) node {13};
+\draw [xshift=8cm] (-135:0.5cm) node {?};
+\end{tikzpicture}
+
+\end{document}
+

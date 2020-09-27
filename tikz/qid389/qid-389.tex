@@ -1,0 +1,37 @@
+\documentclass[tikz,convert={outfile=\jobname.svg}]{standalone}
+%\usetikzlibrary{...}% tikz package already loaded by 'tikz' option
+\begin{document}
+\begin{tikzpicture}[scale=0.8]
+    \def\leftbox{-- ++(1, 0) -- ++(5, -5) -- ++(-1, 0) -- cycle}
+    \def\rightbox{-- ++(5, 5) -- ++(1, 0) -- ++(-5, -5) -- cycle}
+    \draw (0,0) \leftbox;
+    \draw (0,-5) \rightbox;
+
+    \draw (10,0) \leftbox;
+    \draw (10,-5) \rightbox;
+
+    \draw (20,0) \leftbox;
+    \draw (20,-5) \rightbox;
+
+    \draw (1,-0.5) node {3};
+    \draw (11,-0.5) node {4};
+    \draw (21,-0.5) node {3};
+
+    \draw (1,-4.5) node {6};
+    \draw (11,-4.5) node {5};
+    \draw (21,-4.5) node {5};
+
+    \draw (3,-2.5) node {39};
+    \draw (13,-2.5) node {51};
+    \draw (23,-2.5) node {?};
+
+    \draw (5,-0.5) node {5};
+    \draw (15,-0.5) node {7};
+    \draw (25,-0.5) node {5};
+
+    \draw (5, -4.5) node {3};
+    \draw (15,-4.5) node {4};
+    \draw (25,-4.5) node {5};
+\end{tikzpicture}
+\end{document}
+
