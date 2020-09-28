@@ -77,6 +77,7 @@ sub show_ready_qpapers {
         <table>
             <tr> <th> ID </th> <th> Test Type </th> <th> Test Title </th> <th> Total Questions </th> 
                 <th> Schedule </th>
+                <th> View </th>
             </tr>
     };
 
@@ -97,6 +98,13 @@ sub show_ready_qpapers {
                         <input type="hidden" name="sid" value="$sid" />
                         <input type="hidden" name="selected_tst_id" value="$ROW{'tst_id'}" />
                         <input type="submit" name="schedule" value="Schedule" />
+                    </form>
+                </td>
+                <td>
+                    <form action="looktest.pl?sid=$sid" method="post">
+                        <input type="hidden" name="sid" value="$sid" />
+                        <input type="hidden" name="tst_id" value="$ROW{'tst_id'}" />
+                        <input type="submit" name="looktest" value="View" />
                     </form>
                 </td>
                 </tr>

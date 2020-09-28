@@ -231,7 +231,7 @@ sub show_textbox_for_answer() {
     }
 
     print qq{
-        <textarea rows="10" cols="80" name="give_answer_string" value="$given" $readonly/>
+        <textarea rows="10" cols="80" name="give_answer_string" $readonly>$given</textarea>
     };
 }
 
@@ -298,12 +298,12 @@ sub show_mcq {
     $SESSION{'cur_qid'} = $qid;
     my $row_href = select_question($DBH, $qid);
     my %row = %{$row_href};
-    
+
     print qq{<h3> Question (QID: $qid) </h3>
-		 <p> $row{'qhtml'} </p>};
+        <p> $row{'qhtml'} </p>};
 
     if ($row{'qtype'} == 4) {
-        # The answer is to be given as a string.
+# The answer is to be given as a string.
         show_textbox_for_answer();
     } else {
         show_choices($row{'qtype'});

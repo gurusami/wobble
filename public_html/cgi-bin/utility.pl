@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # Created: Mon 14 Sep 2020 10:39:48 PM IST
-# Last Modified: Fri 25 Sep 2020 01:42:12 PM IST
+# Last Modified: Mon 28 Sep 2020 09:41:00 AM IST
 # Time-stamp: <2020-09-10 06:27:50 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
@@ -367,5 +367,6 @@ sub IF_AUTH_LINK2 {
         print qq{<li> [<a href="$script?sid=$sid"> $text </a>] </li>};
     }
 }
+
 
 1;

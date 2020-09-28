@@ -1271,7 +1271,7 @@ sub tags_for_qst {
     my $qid = shift;
     my @tags;
 
-    my $query = "SELECT b.tg_tag FROM ry_qst2tag a, ry_tags b WHERE a.q2t_tagid = b.tg_tagid AND q2t_qid = ?";
+    my $query = "SELECT b.tg_tag FROM ry_qst2tag a, ry_tags b WHERE a.q2t_tagid = b.tg_tagid AND q2t_qid = ? ORDER BY b.tg_tag";
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
     $stmt->execute($qid) or die $dbh->errstr();
 
