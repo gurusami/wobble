@@ -188,7 +188,7 @@ sub show_create_test_form {
 
     print qq{
         <table>
-            <tr> <td> Test Title </td> <td> <input type="text" name="tst_title" value="" /> </td> </tr>
+            <tr> <td> Test Title </td> <td> <input type="text" name="tst_title" size="80" value="" /> </td> </tr>
             <tr> <td> Test Type </td> <td>};
 
     select_tst_type();

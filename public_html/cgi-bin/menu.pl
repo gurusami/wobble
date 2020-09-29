@@ -69,6 +69,7 @@ sub MAIN {
     IF_AUTH_LINK($DBH, $userid, $sid, "image-view.pl", "View an image");
     IF_AUTH_LINK($DBH, $userid, $sid, "validate.pl", "List Tests That I Need To Validate");
     IF_AUTH_LINK($DBH, $userid, $sid, "qpapers.pl", "List of Available Question Papers");
+    IF_AUTH_LINK($DBH, $userid, $sid, "userlist.pl", "List of Registered Users");
     print qq{
 </ul>
 </div>

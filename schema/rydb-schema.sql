@@ -82,7 +82,7 @@ CREATE TABLE `question` (
   CONSTRAINT `question_ibfk_1` FOREIGN KEY (`userid`) REFERENCES `ry_users` (`userid`),
   CONSTRAINT `question_ibfk_2` FOREIGN KEY (`qsrc_ref`) REFERENCES `ry_biblio` (`ref_id`),
   CONSTRAINT `question_ibfk_3` FOREIGN KEY (`qtype`) REFERENCES `ry_qst_types` (`qst_type_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=404 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=424 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -110,7 +110,7 @@ DROP TABLE IF EXISTS `ry_biblio`;
 CREATE TABLE `ry_biblio` (
   `ref_id` int NOT NULL AUTO_INCREMENT,
   `ref_nick` char(10) NOT NULL,
-  `ref_type` tinyint DEFAULT NULL,
+  `ref_type` tinyint unsigned NOT NULL,
   `ref_author` varchar(128) DEFAULT NULL,
   `ref_series` varchar(128) DEFAULT NULL,
   `ref_title` char(128) DEFAULT NULL,
@@ -122,8 +122,10 @@ CREATE TABLE `ry_biblio` (
   `ref_url` text,
   `ref_accessed` date DEFAULT NULL,
   PRIMARY KEY (`ref_id`),
-  UNIQUE KEY `ref_nick` (`ref_nick`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  UNIQUE KEY `ref_nick` (`ref_nick`),
+  KEY `ref_type` (`ref_type`),
+  CONSTRAINT `ry_biblio_ibfk_1` FOREIGN KEY (`ref_type`) REFERENCES `ry_ref_types` (`ref_type_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -276,6 +278,23 @@ CREATE TABLE `ry_qst_types` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `ry_ref_types`
+--
+
+DROP TABLE IF EXISTS `ry_ref_types`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ry_ref_types` (
+  `ref_type_id` tinyint unsigned NOT NULL AUTO_INCREMENT,
+  `ref_type_name` char(8) NOT NULL,
+  `ref_type_desc` char(64) NOT NULL,
+  PRIMARY KEY (`ref_type_id`),
+  UNIQUE KEY `ref_type_name` (`ref_type_name`),
+  UNIQUE KEY `ref_type_desc` (`ref_type_desc`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `ry_script_acl`
 --
 
@@ -324,7 +343,7 @@ CREATE TABLE `ry_tags` (
   PRIMARY KEY (`tg_tagid`),
   UNIQUE KEY `tg_tag` (`tg_tag_info`),
   UNIQUE KEY `tg_tag_nick` (`tg_tag`)
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -340,7 +359,8 @@ CREATE TABLE `ry_test_attempts` (
   `att_qid` int NOT NULL,
   `att_given` int DEFAULT NULL,
   `att_when` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `att_result` tinyint(1) DEFAULT NULL,
+  `att_result` tinyint DEFAULT NULL,
+  `att_gave` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`att_userid`,`att_tst_id`,`att_qid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -444,7 +464,7 @@ CREATE TABLE `ry_test_types` (
   PRIMARY KEY (`tst_type_id`),
   UNIQUE KEY `tst_type_name` (`tst_type_name`),
   UNIQUE KEY `tst_type_nick` (`tst_type_nick`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -467,7 +487,7 @@ CREATE TABLE `ry_tests` (
   UNIQUE KEY `tst_title` (`tst_title`),
   KEY `tst_state` (`tst_state`),
   CONSTRAINT `ry_tests_ibfk_1` FOREIGN KEY (`tst_state`) REFERENCES `ry_test_states` (`tstate_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -497,4 +517,4 @@ CREATE TABLE `ry_users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-09-28 21:36:08
+-- Dump completed on 2020-09-29 21:33:12

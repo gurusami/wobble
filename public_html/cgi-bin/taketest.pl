@@ -104,44 +104,55 @@ sub PROCESS {
 
 }
 
-sub validate_answers {
-    my $dbh = shift;
-    my $userid = shift;
-    my $tst_id = shift;
+sub show_links_to_each_question {
+    my $sid = $SESSION{'sid'};
+    my $N = $SESSION{'tst_qst_count'};
+    my $tst_id = $FORM{'tst_id'};
+    my $qid = $SESSION{'cur_qid'};
+    my $userid = $SESSION{'userid'};
 
-    $dbh->begin_work();
+    print qq{
+        <div style="text-align: center;" >
+            <ul style="list-style: none; display: inline; ">
+                <li style="list-style: none; display: inline; "> Direct Question Links: </li>
+    };
 
-    my $query = "SELECT * FROM ry_test_attempts WHERE att_userid = ? AND att_tst_id = ? FOR UPDATE";
-    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
-    my $update_query = "UPDATE ry_test_attempts SET att_result = ? WHERE att_userid = ? AND att_tst_id = ?";
-    my $upd_stmt = $dbh->prepare($update_query) or die $dbh->errstr();
+    my $query = qq{
+        SELECT *
+        FROM ry_test_attempts a, ry_test_questions b
+        WHERE a.att_tst_id = b.tq_tst_id
+        AND a.att_userid = ?
+        AND a.att_tst_id = ?
+        AND b.tq_tst_id = ?
+        AND a.att_qid = b.tq_qid
+        ORDER BY b.tq_qid_seq
+    };
 
-    $stmt->execute($userid, $tst_id) or die $dbh->errstr();
+    my $stmt = $DBH->prepare($query) or die $DBH->errstr();
+    $stmt->execute($userid, $tst_id, $tst_id) or die $DBH->errstr();
 
-    while (my ($row_href) = $stmt->fetchrow_hashref()) {
+    while (my $row_href = $stmt->fetchrow_hashref()) {
         my %ROW = %{$row_href};
-        my $qid = $ROW{'att_qid'};
-        my $qst_row_href = select_question($dbh, $qid);
-        my %QROW = %{$qst_row_href};
-        my $qtype = $QROW{'qtype'};
+        my $gave = $ROW{'att_gave'};
+        my $bg = "";
+        my $i = $ROW{'tq_qid_seq'};
 
-        if ($qtype == 0) {
-            my $C = validate_answer_1($dbh, $qid, $ROW{'att_given'});
-            $upd_stmt->execute($C, $userid, $tst_id) or die $dbh->errstr();
-
-        } elsif ($qtype == 1) {
-            my $C = validate_answer_2($dbh, $qid, $ROW{'att_given'});
-            $upd_stmt->execute($C, $userid, $tst_id) or die $dbh->errstr();
-
+        if (! defined $gave || $gave == 0) {
+            $bg = "";
         } else {
-            die "Unknown Question Type";
+            $bg = "background-color: Navy; color: white";
         }
+
+        print qq{
+                <li style="list-style: none; display: inline; $bg; margin-left: 10px; padding-left: 10px; padding-right: 10px;">
+                        <a style="$bg;" href="taketest.pl?sid=$sid&tst_id=$tst_id&cur_seq=$i">$i</a> </li>
+        };
     }
 
-    $upd_stmt->finish();
-    $stmt->finish();
-
-    $dbh->commit();
+    print qq{
+            </ul>
+        </div>
+    };
 }
 
 sub show_test_result() {
@@ -392,6 +403,8 @@ sub DISPLAY {
     show_test_details();
     display_status();
 
+    show_links_to_each_question();
+
     print qq{
         <form action="taketest.pl?sid=$SESSION{'sid'}" method="POST">
         <div>
@@ -442,8 +455,8 @@ sub DISPLAY {
     print q{
         </form>};
 
-# print_hash(\%SESSION);
-# print_hash(\%FORM);
+    # print_hash(\%SESSION);
+    # print_hash(\%FORM);
     doc_end();
 }
 

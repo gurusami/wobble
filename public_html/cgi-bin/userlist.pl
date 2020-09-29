@@ -1,6 +1,9 @@
 #!/usr/bin/perl
 #
-# Time-stamp: <2020-09-11 13:42:12 annamalai>
+# Created: Mon 21 Sep 2020 09:16:43 PM IST
+# Last-Updated: Mon 21 Sep 2020 09:16:43 PM IST
+# 
+# Time-stamp: <2020-09-09 13:41:07 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
 #
@@ -48,88 +51,85 @@ sub COLLECT {
 }
 
 sub PROCESS {
+    if ($ENV{'REQUEST_METHOD'} eq "POST") {
+    }
 }
 
-sub list_my_reports {
-    my $sid=$SESSION{'sid'};
-    my $taker=$SESSION{'userid'};
+sub local_css()
+{
+    print qq{
+<style>
+</style>
+};
+}
 
-    my $query =  qq{
-        SELECT *
-        FROM ry_test_reports a, ry_tests b, ry_test_types c
-        WHERE a.rpt_tst_id = b.tst_id
-        AND b.tst_type = c.tst_type_id
-        AND rpt_userid = ?
-        ORDER BY rpt_created DESC;
+sub html_monitor_user {
+    my $userid = shift;
+
+    my $sid = $SESSION{'sid'};
+    my $html = qq{
+        <form action="checkuser.pl?sid=$sid" method="post">
+            <input type="hidden" name="sid" value="$sid" />
+            <input type="hidden" name="target_user" value="$userid" />
+            <input type="submit" name="monitor_user" value="Monitor" />
+        </form>
     };
 
+    return $html;
+}
+
+sub show_all_users()
+{
+    my $query = "SELECT * FROM ry_users ORDER BY userid";
     my $stmt = $DBH->prepare($query) or die $DBH->errstr();
-    $stmt->execute($SESSION{'userid'}) or die $DBH->errstr();
+    $stmt->execute() or die $DBH->errstr();
 
-    print q{
-    <h2> My Test Reports </h2>
-	<table>
-	<tr> 
-	<th> Test ID </th>
-	<th> Test Type </th>
-	<th> Test Title </th>
-	<th> Total Questions </th>
-	<th> Correct </th>
-	<th> Wrong </th>
-	<th> Skipped </th>
-	<th> Report Created On </th>
-	<th> Review </th>
-	</tr>
+    print qq{
+        <div>
+        <table>
+            <tr>
+                <th> User ID  </th>
+                <th> User Name </th>
+                <th> Created </th>
+                <th> Monitor </th>
+            </tr>
     };
-
 
     while (my $row_href = $stmt->fetchrow_hashref()) {
         my %ROW = %{$row_href};
-        my $tst_id = $ROW{'tst_id'};
 
-        my $qs=qq[taketest.pl?sid=$sid&tst_id=$tst_id];
+        my $monitor = html_monitor_user($ROW{'userid'});
 
         print qq{
-            <tr> 
-                <td> <a href="$qs">$tst_id</a> </td>
-                <td> $ROW{'tst_type_nick'} </td>
-                <td> $ROW{'tst_title'} </td>
-                <td> $ROW{'rpt_q_total'} </td>
-                <td> $ROW{'rpt_q_correct'} </td>
-                <td> $ROW{'rpt_q_wrong'} </td>
-                <td> $ROW{'rpt_q_skip'} </td>
-                <td> $ROW{'rpt_created'} </td>
-                <td>
-
-                <form action="test-review.pl?sid=$sid" method="post">
-                <input type="hidden" name="sid" value="$sid" />
-                <input type="hidden" name="taker" value="$taker" />
-                <input type="hidden" name="tst_id" value="$tst_id" />
-                <input type="submit" name="test_review" value="Test Review" />
-                </form>
-
-                </td>
-                </tr>
+            <tr>
+                <td> $ROW{'userid'} </td>
+                <td> $ROW{'username'} </td>
+                <td> $ROW{'ur_created'} </td>
+                <td> $monitor </td>
+            </tr>
         };
     }
 
-    print q{</table>};
-    
+    print qq{
+        </table>
+        </div>
+    };
 }
 
 
 sub DISPLAY {
     print "<html>";
     print "<head>";
-    print "<title> Wobble: List My Test Reports </title>";
+    print "<title> Create a New Test </title>";
 
     link_css();
+    local_css();
 
     print "</head>" . "\n";
     print "<body>";
     top_menu($DBH, $SESSION{'userid'}, $SESSION{'sid'});
 
-    list_my_reports();
+    show_all_users();
     print "</body>";
     print "</html>";
 

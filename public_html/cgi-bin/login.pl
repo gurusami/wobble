@@ -23,11 +23,16 @@ my $dbh;
 
 sub display_login {
     print q{
-<form action="login.pl" method="post">
-<input type="text" name="username" maxlength="10"/>
-<input type="password" name="token" maxlength="30"/>
-<input type="submit" name="login" value="Sign In" />
-</form>
+        <div>
+            <form action="login.pl" method="post">
+
+            <table>
+            <tr> <td> Username: </td> <td> <input type="text" name="username" maxlength="10"/> </td> </tr>
+            <tr> <td> Password: </td> <td> <input type="password" name="token" maxlength="30"/> </td> </tr>
+            <tr> <td colspan="2"> <input type="submit" name="login" value="Sign In" /> </td> </tr>
+            </table>
+            </form>
+            </div>
     };
 }
 
@@ -56,7 +61,7 @@ sub login_success {
     <!DOCTYPE html>
 	<html>
 	<head>
-	<meta http-equiv="refresh" content="7; url='$url'" />
+	<meta http-equiv="refresh" content="0; url='$url'" />
 	</head>
 	<body>
 	<p>Login successful. Please follow <a href="$url">this link</a>.</p>
@@ -113,18 +118,23 @@ sub DISPLAY {
     content_type();
 
     if (!defined $FORM{'username'}) {
-	html_begin();
-	head_begin();
-	head_end();
-	body_begin();
-	display_login();
-	body_end();
-	html_end();
+        html_begin();
+
+        print q{<head>};
+
+        link_css();
+
+            print q{ </head>};
+
+        body_begin();
+        display_login();
+        body_end();
+        html_end();
     } elsif (defined $FORM{'userid'} && $FORM{'userid'} > 0) {
-	# Login Successful.
-	login_success();
+# Login Successful.
+        login_success();
     } else {
-	login_failed();
+        login_failed();
     }
 }
 

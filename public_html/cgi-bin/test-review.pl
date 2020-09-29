@@ -78,90 +78,9 @@ sub PROCESS {
         $FORM{'cur_seq'}--;
         $SESSION{'qid'} = get_nth_qid_in_tst($DBH, $tst_id, $FORM{'cur_seq'});
         $qid = $SESSION{'qid'};
-    } elsif (defined $FORM{'correct'}) {
-        mark_correct($DBH, $taker, $tst_id, $qid);
-    } elsif (defined $FORM{'wrong'}) {
-        mark_wrong($DBH, $taker, $tst_id, $qid);
-    } elsif (defined $FORM{'skipped'}) {
-        mark_skipped($DBH, $taker, $tst_id, $qid);
-    } elsif (defined $FORM{'prepare_report'}) {
-        my $total = $SESSION{'tst_qst_count'};
-        my $correct = get_correct_count($DBH, $taker, $tst_id);
-        my $skipped = get_skipped_count($DBH, $taker, $tst_id);
-        my $wrong = get_wrong_count($DBH, $taker, $tst_id);
-
-        my $report_exists = check_for_report($DBH, $taker, $tst_id);
-
-        if ($report_exists == 0) {
-            insert_test_report($DBH, $taker, $tst_id, $total, $correct, $wrong, $skipped);
-        } else {
-            update_test_report($DBH, $taker, $tst_id, $total, $correct, $wrong, $skipped);
-        }
-
-        mark_test_validated($DBH, $taker, $tst_id);
     }
 }
 
-sub validate_answers {
-    my $dbh = shift;
-    my $userid = shift;
-    my $tst_id = shift;
-
-    $dbh->begin_work();
-
-    my $query = "SELECT * FROM ry_test_attempts WHERE att_userid = ? AND att_tst_id = ? FOR UPDATE";
-    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
-    my $update_query = "UPDATE ry_test_attempts SET att_result = ? WHERE att_userid = ? AND att_tst_id = ?";
-    my $upd_stmt = $dbh->prepare($update_query) or die $dbh->errstr();
-
-    $stmt->execute($userid, $tst_id) or die $dbh->errstr();
-
-    while (my ($row_href) = $stmt->fetchrow_hashref()) {
-        my %ROW = %{$row_href};
-        my $qid = $ROW{'att_qid'};
-        my $qst_row_href = select_question($dbh, $qid);
-        my %QROW = %{$qst_row_href};
-        my $qtype = $QROW{'qtype'};
-
-        if ($qtype == 0) {
-            my $C = validate_answer_1($dbh, $qid, $ROW{'att_given'});
-            $upd_stmt->execute($C, $userid, $tst_id) or die $dbh->errstr();
-
-        } elsif ($qtype == 1) {
-            my $C = validate_answer_2($dbh, $qid, $ROW{'att_given'});
-            $upd_stmt->execute($C, $userid, $tst_id) or die $dbh->errstr();
-
-        } else {
-            die "Unknown Question Type";
-        }
-    }
-
-    $upd_stmt->finish();
-    $stmt->finish();
-
-    $dbh->commit();
-}
-
-sub show_test_result() {
-
-    my $query = "SELECT rpt_q_total, rpt_q_correct, rpt_q_wrong, rpt_q_skip FROM ry_test_reports WHERE rpt_userid = ? AND rpt_tst_id = ?";
-    my $stmt = $DBH->prepare($query) or die $DBH->errstr();
-    $stmt->execute($SESSION{'userid'}, $FORM{'tst_id'}) or die $DBH->errstr();
-
-    my ($total, $correct, $wrong, $skipped) = $stmt->fetchrow();
-    $stmt->finish;
-    
-    print qq{
-    <h2> Test Results </h2>
-	<table>
-	<tr> <td> Total Questions </td> <td> $total </td> </tr>
-	<tr> <td> Correct Answers </td> <td> $correct </td> </tr>
-	<tr> <td> Skipped Questions </td> <td> $skipped </td> </tr>
-	<tr> <td> Wrong Answers </td> <td> $wrong </td> </tr>
-	</table>
-    }
-}
-    
 sub show_test_details {
     my $tst_id = $SESSION{'tst_id'};
     my $taker = $SESSION{'taker'};
@@ -305,22 +224,6 @@ sub local_css {
     print qq{
 <style>
 
-.tick-container {
-    border: 1px solid tan;
-    background-color: wheat;
-    display: grid;
-    grid-template-columns: auto auto;
-    position: fixed;
-    bottom: 5%;
-    width: 90%;
-    align: center;
-    margin-left: 5%;
-    margin-right: 5%;
-    text-align: center;
-    padding-top: 10px;
-    padding-bottom: 10px;
-}
-
 #next-q div {
     background-color: red;
 }
@@ -347,12 +250,18 @@ sub doc_end {
 sub report_validation_status {
     my $validated = is_answer_validated($DBH, $SESSION{'taker'}, $SESSION{'tst_id'}, $SESSION{'qid'});
 
+    my $not_validated =  qq{<p> This question is NOT YET VALIDATED. </p>};
+
     if (! defined $validated) {
-        print qq{<p> This question is SKIPPED. </p>};
+        print $not_validated;
+    } elsif ($validated == 3) {
+        print qq{<p> This question has been validated as SKIPPED. </p>};
+    } elsif ($validated == 2) {
+        print qq{<p> This question has been validated as WRONG. </p>};
     } elsif ($validated == 1) {
         print qq{<p> This question has been validated as CORRECT. </p>};
     } elsif ($validated == 0) {
-        print qq{<p> This question has been validated as WRONG. </p>};
+        print $not_validated;
     }
 }
 
@@ -388,21 +297,16 @@ sub DISPLAY {
     }
 
     print qq{
-<div class="tick-container">
-    <div>
+      <div style="display: grid; grid-template-columns: auto auto; text-align: center;">
+       <div>
         <input type="submit" name="prev" value="Previous Question" $prev_disable />
-    </div>
-    <div id="next-q">
+       </div>
+       <div>
         <input type="submit" name="next" value="Next Question" $next_disable />
-    </div>
-</div>
-};
-
-    print q{
-        </form>};
-
-# print_hash(\%SESSION);
-# print_hash(\%FORM);
+       </div>
+      </div>
+     </form>
+    };
     doc_end();
 }
 

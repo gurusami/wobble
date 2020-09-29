@@ -19,7 +19,13 @@ my $DBH;
 my $ref_id = 0;
 
 sub display_references {
-    my $query = q{SELECT ref_id, ref_nick, ref_type, ref_author, ref_title, ref_isbn10, ref_isbn13 FROM ry_biblio ORDER BY ref_id};
+    my $query = q{
+        SELECT *
+        FROM ry_biblio a, ry_ref_types b
+        WHERE a.ref_type = b.ref_type_id
+        ORDER BY ref_id
+    };
+
     my $stmt = $DBH->prepare($query) or die $DBH->errstr();
     $stmt->execute() or die $DBH->errstr();
 
@@ -29,6 +35,7 @@ sub display_references {
             <table>
             <tr>
             <th> Ref ID </th>
+            <th> Ref Type </th>
             <th> Nick Name </th>
             <th> Author </th>
             <th> Title </th>
@@ -39,10 +46,18 @@ sub display_references {
 
     while (my $row_href = $stmt->fetchrow_hashref()) {
         my %ROW = %{$row_href};
+        my $nick = $ROW{'ref_nick'};
+
+        if ($ROW{'ref_type'} == 3) {
+            my $full_url = $ENV{'REQUEST_SCHEME'} . "://" . $ENV{'HTTP_HOST'} . $ENV{'CONTEXT_PREFIX'} . $ROW{'ref_url'};
+            $nick = qq{<a href="$full_url">$ROW{'ref_nick'}</a>};
+        }
+
         print qq{
             <tr id="rows">
                 <td> $ROW{'ref_id'} </td>
-                <td> $ROW{'ref_nick'} </td>
+                <td> $ROW{'ref_type_name'} </td>
+                <td> $nick </td>
                 <td> $ROW{'ref_author'} </td>
                 <td> $ROW{'ref_title'} </td>
                 <td> $ROW{'ref_isbn10'} </td>
@@ -59,7 +74,27 @@ sub display_references {
     $stmt->finish();
 }
 
+sub html_ref_types {
+    my $query = qq{
+        SELECT * FROM ry_ref_types ORDER BY ref_type_id;
+    };
+    my $html = q{<select name="ref_type">};
+
+    my $stmt = $DBH->prepare($query) or die $DBH->errstr();
+    $stmt->execute() or die $DBH->errstr();
+
+    while (my $row_href = $stmt->fetchrow_hashref()) {
+        my %ROW = %{$row_href};
+        $html = $html . qq{<option value="$ROW{'ref_type_id'}">$ROW{'ref_type_name'}</option>};
+    }
+
+    $html = $html . q{</select>};
+    return $html;
+}
+
 sub display_add_reference {
+    my $html_refs = html_ref_types();
+
     print qq{
         <div id="addbiblio">
             <h2> Add Reference </h2>
@@ -73,12 +108,7 @@ sub display_add_reference {
 
             <tr>
             <td> Reference Type </td>
-            <td> <select name="ref_type"> 
-            <option value="1">Book</option>
-            <option value="2">Online</option>
-            <option value="3">Others</option>
-            </select>
-            </td>
+            <td> $html_refs  </td>
             </tr>
 
             <tr>
@@ -123,7 +153,7 @@ sub display_add_reference {
 
             <tr>
             <td> URL </td>
-            <td> <input type="url" name="ref_url" value="" /></td>
+            <td> <input type="text" name="ref_url" value="" /></td>
             </tr>
 
             <tr>

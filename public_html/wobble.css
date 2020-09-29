@@ -216,3 +216,19 @@ ul.no-bullets {
     align: left;
     border: none;
 }
+
+.tick-container {
+    border: 1px solid var(--border-color);
+    display: grid;
+    grid-template-columns: auto auto auto auto auto;
+    position: fixed;
+    bottom: 5%;
+    width: 90%;
+    align: center;
+    margin-left: 5%;
+    margin-right: 5%;
+    text-align: center;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+

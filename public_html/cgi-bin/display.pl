@@ -299,8 +299,8 @@ sub display_answer_2 {
         print qq{
             <tr>
                 <td> <input type="radio" name="choice_radio" value="$choice_id" $checked/> </td>
-                <td> <input type="text" size="80" name="$choice_name" value="$row{'choice_latex'}" /> </td>
-                <td> <input type="text" size="80" name="$choice_name_html" value="$row{'choice_html'}" /> </td>
+                <td> <input type="text" size="40" name="$choice_name" value="$row{'choice_latex'}" /> </td>
+                <td> <input type="text" size="40" name="$choice_name_html" value="$row{'choice_html'}" /> </td>
                 </tr>
         };
 
@@ -320,6 +320,10 @@ sub display_answer_2 {
 <!-- Begin: Form to Add a Choice. -->
 <form action="tinker.pl?sid=$sid" method="post">
     <table>
+        <tr>
+            <td> Same for HTML and LaTeX </td>
+            <td> <input type="checkbox" name="same_latex_html" checked="true" /> </td>
+        </tr>
         <tr>
             <td> Choice (LaTeX) </td>
             <td> <input type="text" size="80" name="choice_latex" /> </td>

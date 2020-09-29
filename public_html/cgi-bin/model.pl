@@ -270,6 +270,10 @@ sub insert_answer_2 {
     my $chid = $FORM{'chid'};
     my $choice_latex = $FORM{'choice_latex'};
     my $choice_html = $FORM{'choice_html'};
+
+    if (defined $FORM{'same_latex_html'}) {
+        $choice_html = $choice_latex;
+    }
     
     my $query = "INSERT INTO answer_2 (qid, chid, choice_latex, choice_html, correct) VALUES (?, ?, ?, ?, ?)";
     my $stmt = $dbh->prepare($query);
@@ -837,6 +841,16 @@ sub is_test_submitted {
 # -------------------------------------------------------------------------
 # BEGIN - TABLE: ry_test_attempts
 # -------------------------------------------------------------------------
+# att_given: user given answer.  This is populated only only for certain
+#            question types.  NULL doesn't mean the user has skipped this
+#            question in the exam.
+# att_result: This is validation. Is it correct answer or wrong answer.
+#             0 or NULL means that validation is not yet done.
+#             1 means answer is correct;
+#             2 means answer is wrong;
+#             3 means user didn't give answer. skipped.
+# att_gave: Did user give response or not?
+#              
 
 sub prepare_test_attempt {
     my $dbh = shift;
@@ -877,7 +891,7 @@ sub insert_attempt_answer {
     my $qid = shift;
     my $given = shift;
 
-    my $query = q{INSERT INTO ry_test_attempts (att_userid, att_tst_id, att_qid, att_given) VALUES (?, ?, ?, ?)};
+    my $query = q{INSERT INTO ry_test_attempts (att_userid, att_tst_id, att_qid, att_given, att_gave) VALUES (?, ?, ?, ?, true)};
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
     $stmt->execute($userid, $tst_id, $qid, $given) or die $dbh->errstr();
     $stmt->finish();
@@ -932,7 +946,7 @@ sub update_attempt_answer {
     my $given = shift;
     
     my $query = q{UPDATE ry_test_attempts
-		      SET att_given = ?, att_when = current_timestamp
+		      SET att_given = ?, att_when = current_timestamp, att_gave = true
 		      WHERE att_userid = ? AND att_tst_id = ? 
 		      AND att_qid = ?};
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
@@ -966,7 +980,7 @@ sub mark_correct {
 
     ensure_attempt($dbh, $userid, $tst_id, $qid);
 
-    my $query = q{UPDATE ry_test_attempts SET att_result = TRUE
+    my $query = q{UPDATE ry_test_attempts SET att_result = 1
 		      WHERE att_userid = ? AND att_tst_id = ? 
 		      AND att_qid = ?};
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
@@ -980,10 +994,24 @@ sub is_answer_validated {
     my $tst_id = shift;
     my $qid = shift;
 
-    my $query = "SELECT att_given, att_result FROM ry_test_attempts WHERE att_userid = ? AND att_tst_id = ? AND att_qid = ?";
+    my $query = "SELECT att_result FROM ry_test_attempts WHERE att_userid = ? AND att_tst_id = ? AND att_qid = ?";
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
     $stmt->execute($userid, $tst_id, $qid) or die $dbh->errstr();
-    my ($given, $result) = $stmt->fetchrow();
+    my ($result) = $stmt->fetchrow();
+    $stmt->finish();
+    return $result;
+}
+
+sub did_user_give_answer {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+
+    my $query = "SELECT att_gave FROM ry_test_attempts WHERE att_userid = ? AND att_tst_id = ? AND att_qid = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $qid) or die $dbh->errstr();
+    my ($result) = $stmt->fetchrow();
     $stmt->finish();
     return $result;
 }
@@ -996,7 +1024,7 @@ sub mark_wrong {
 
     ensure_attempt($dbh, $userid, $tst_id, $qid);
 
-    my $query = q{UPDATE ry_test_attempts SET att_result = FALSE
+    my $query = q{UPDATE ry_test_attempts SET att_result = 2
 		      WHERE att_userid = ? AND att_tst_id = ? 
 		      AND att_qid = ?};
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
@@ -1012,7 +1040,23 @@ sub mark_skipped {
 
     ensure_attempt($dbh, $userid, $tst_id, $qid);
 
-    my $query = q{UPDATE ry_test_attempts SET att_result = NULL
+    my $query = q{UPDATE ry_test_attempts SET att_result = 3
+		      WHERE att_userid = ? AND att_tst_id = ? 
+		      AND att_qid = ?};
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id, $qid) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub mark_gave {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $qid = shift;
+
+    ensure_attempt($dbh, $userid, $tst_id, $qid);
+
+    my $query = q{UPDATE ry_test_attempts SET att_gave = true
 		      WHERE att_userid = ? AND att_tst_id = ? 
 		      AND att_qid = ?};
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
@@ -1025,7 +1069,7 @@ sub get_correct_count {
     my $userid = shift;
     my $tst_id = shift;
 
-    my $query = "SELECT COUNT(*) FROM ry_test_attempts WHERE att_userid = ? AND att_tst_id = ? AND att_result is TRUE";
+    my $query = "SELECT COUNT(*) FROM ry_test_attempts WHERE att_userid = ? AND att_tst_id = ? AND att_result = 1";
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
     $stmt->execute($userid, $tst_id) or die $dbh->errstr();
     my ($correct) = $stmt->fetchrow();
@@ -1038,7 +1082,7 @@ sub get_skipped_count {
     my $userid = shift;
     my $tst_id = shift;
 
-    my $query = "SELECT COUNT(*) FROM ry_test_attempts WHERE att_userid = ? AND att_tst_id = ? AND att_result IS NULL";
+    my $query = "SELECT COUNT(*) FROM ry_test_attempts WHERE att_userid = ? AND att_tst_id = ? AND att_result = 3";
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
     $stmt->execute($userid, $tst_id) or die $dbh->errstr();
     my ($skipped) = $stmt->fetchrow();
@@ -1051,7 +1095,7 @@ sub get_wrong_count {
     my $userid = shift;
     my $tst_id = shift;
 
-    my $query = "SELECT COUNT(*) FROM ry_test_attempts WHERE att_userid = ? AND att_tst_id = ? AND att_result IS FALSE";
+    my $query = "SELECT COUNT(*) FROM ry_test_attempts WHERE att_userid = ? AND att_tst_id = ? AND att_result = 2";
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
     $stmt->execute($userid, $tst_id) or die $dbh->errstr();
     my ($N) = $stmt->fetchrow();

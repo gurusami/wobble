@@ -326,22 +326,6 @@ sub local_css {
     print qq{
 <style>
 
-.tick-container {
-    border: 1px solid tan;
-    background-color: wheat;
-    display: grid;
-    grid-template-columns: auto auto auto auto auto;
-    position: fixed;
-    bottom: 5%;
-    width: 90%;
-    align: center;
-    margin-left: 5%;
-    margin-right: 5%;
-    text-align: center;
-    padding-top: 10px;
-    padding-bottom: 10px;
-}
-
 #next-q div {
     background-color: red;
 }
@@ -368,12 +352,18 @@ sub doc_end {
 sub report_validation_status {
     my $validated = is_answer_validated($DBH, $SESSION{'taker'}, $SESSION{'tst_id'}, $SESSION{'qid'});
 
+    my $mesg = qq{<p> This question is NOT YET VALIDATED. </p>};
+
     if (! defined $validated) {
-        print qq{<p> This question is NOT yet validated or SKIPPED. </p>};
+        print $mesg;
+    } elsif ($validated == 3) {
+        print qq{<p> This question has been validated as SKIPPED. </p>};
+    } elsif ($validated == 2) {
+        print qq{<p> This question has been validated as WRONG. </p>};
     } elsif ($validated == 1) {
         print qq{<p> This question has been validated as CORRECT. </p>};
     } elsif ($validated == 0) {
-        print qq{<p> This question has been validated as WRONG. </p>};
+        print $mesg;
     }
 }
 
