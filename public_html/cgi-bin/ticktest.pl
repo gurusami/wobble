@@ -235,7 +235,7 @@ sub show_textbox_for_answer()
     }
 
     print qq{
-    <input type="text" size="80" name="give_answer_string" value="$given" readonly/>
+    <textarea rows="10" cols="80" name="give_answer_string" readonly>$given</textarea>
 
     <h3> Correct Answer </h3>
 
