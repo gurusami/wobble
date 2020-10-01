@@ -54,9 +54,12 @@ sub PROCESS {
         my $tst_id = $FORM{'selected_tst_id'};
         my $tst_giver = $SESSION{'userid'};
 
+        my $from_ts = $FORM{'from_date'} . ' ' . $FORM{'from_time'};
+        my $to_ts = $FORM{'to_date'} . ' ' . $FORM{'to_time'};
+
         $DBH->begin_work();
         insert_test_schedule($DBH, $userid, $tst_id,
-                $FORM{'from_date'}, $FORM{'to_date'}, $tst_giver);
+                $from_ts, $to_ts, $tst_giver);
         prepare_test_attempt($DBH, $userid, $tst_id);
         $DBH->commit();
     }
@@ -119,10 +122,14 @@ sub show_users {
 
 sub show_dates {
     print q{<table>};
-    print q{<tr> <th> From Date </th> <th> To Date </th> </tr>};
+    print q{
+        <tr> <th> From Date </th> <th> From Time </th> <th> To Date </th> <th> To Time </th> </tr>
+    };
     print q{<tr>} . 
 	qq{<td> <input type="date" name="from_date" value="$FORM{'from_date'}" /> </td>} .
+	qq{<td> <input type="time" name="from_time" value="$FORM{'from_time'}" /> </td>} .
 	qq{<td> <input type="date" name="to_date" value="$FORM{'to_date'}" /> </td>} .
+	qq{<td> <input type="time" name="to_time" value="$FORM{'to_time'}" /> </td>} .
 	q{</tr>} . "\n"
 	. q{</table>} . "\n"
 	. q{<input type="submit" name="sel_dates" value="Select Dates" />};
@@ -131,7 +138,7 @@ sub show_dates {
 sub DISPLAY {
     print "<html>";
     print "<head>";
-    print "<title> Create a New Test </title>";
+    print "<title> Wobble: Test Schedule </title>";
     link_css();
     print "</head>" . "\n";
     print "<body>";
@@ -156,7 +163,9 @@ sub DISPLAY {
         print qq{<input type="hidden" name="selected_username" value="$FORM{'selected_username'}" />};
         print qq{<input type="hidden" name="userid" value="$SESSION{'userid'}" />};
         print qq{<input type="hidden" name="from_date" value="$FORM{'from_date'}" />};
+        print qq{<input type="hidden" name="from_time" value="$FORM{'from_time'}" />};
         print qq{<input type="hidden" name="to_date" value="$FORM{'to_date'}" />} .
+        print qq{<input type="hidden" name="to_time" value="$FORM{'to_time'}" />} .
             q{<input type="submit" name="confirm" value="Confirm" />};
     } else {
         print q{<h2> Test Schedule Completed </h2>} . "\n"
@@ -165,7 +174,9 @@ sub DISPLAY {
             . qq{<tr> <td> Test ID </td> <td> $FORM{'selected_tst_id'} </td> </tr>} . "\n"
             . qq{<tr> <td> User </td> <td> $FORM{'selected_username'} </td> </tr> } . "\n"
             . qq{<tr> <td> From Date </td> <td> $FORM{'from_date'} </td> </tr> } . "\n"
+            . qq{<tr> <td> From Time </td> <td> $FORM{'from_time'} </td> </tr> } . "\n"
             . qq{<tr> <td> To Date </td> <td> $FORM{'to_date'} </td> </tr> } . "\n"
+            . qq{<tr> <td> To Time </td> <td> $FORM{'to_time'} </td> </tr> } . "\n"
             . q{</table>};
     }
     print q{</form>};

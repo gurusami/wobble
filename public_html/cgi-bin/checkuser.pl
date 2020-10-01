@@ -123,6 +123,66 @@ sub list_all_reports {
     };
 }
 
+sub list_tests_not_yet_taken {
+    my $sid = $SESSION{'sid'};
+
+    my $query = q{
+        SELECT *
+        FROM ry_tests a, ry_users b, ry_test_types c, ry_test_states d
+        WHERE a.tst_type = c.tst_type_id
+        AND a.tst_owner = b.userid
+        AND a.tst_owner = ?
+        AND a.tst_state = d.tstate_id
+        AND a.tst_state = 2
+        AND a.tst_id NOT IN (SELECT sch_tst_id FROM ry_test_schedule WHERE sch_userid = ?)
+        ORDER BY a.tst_id;
+    };
+
+    my $stmt = $DBH->prepare($query) or die $DBH->errstr();
+    $stmt->execute($SESSION{'userid'}, $FORM{'target_user'}) or die $DBH->errstr();
+
+    print qq{
+        <div>
+        <h3> Tests Not Yet Taken </h3>
+        <table>
+            <tr>
+                <th> User Name </th>
+                <th> Test ID </th>
+                <th> Test Type </th>
+                <th> Test Title </th>
+                <th> State </th>
+                <th> Schedule </th>
+            </tr>
+    };
+
+    while (my $row_href = $stmt->fetchrow_hashref()) {
+        my %ROW = %{$row_href};
+
+        print qq{
+            <tr>
+                <td> $ROW{'username'} </td>
+                <td> $ROW{'tst_id'} </td>
+                <td> $ROW{'tst_type_nick'} </td>
+                <td> $ROW{'tst_title'} </td>
+                <td> $ROW{'tstate_nick'} </td>
+                <td> 
+                    <form action="test-schedule.pl?sid=$sid" method="post">
+                        <input type="hidden" name="sid" value="$sid" />
+                        <input type="hidden" name="selected_tst_id" value="$ROW{'tst_id'}" />
+                        <input type="hidden" name="selected_username" value="$ROW{'username'}" />
+                        <input type="submit" name="schedule" value="Schedule" />
+                    </form>
+                </td>
+            </tr>
+        };
+    }
+
+    print qq{
+        </table>
+        </div>
+    };
+}
+
 sub list_all_tests {
 
     my $query = q{
@@ -142,6 +202,7 @@ sub list_all_tests {
 
     print qq{
         <div>
+        <h3> Tests Taken </h3>
         <table>
             <tr>
                 <th> User Name </th>
@@ -190,6 +251,7 @@ sub DISPLAY {
 
     list_all_tests();
     list_all_reports();
+    list_tests_not_yet_taken();
 
     print "</body>";
     print "</html>";

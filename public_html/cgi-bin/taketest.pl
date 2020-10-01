@@ -59,6 +59,8 @@ sub PROCESS {
     my $userid = $SESSION{'userid'};
     my $tst_id = $FORM{'tst_id'};
 
+    $SESSION{'can_take'} = can_take_test($DBH, $userid, $tst_id);
+
     if (! defined $FORM{'cur_seq'}) {
         $FORM{'cur_seq'} = 1;
     }
@@ -399,64 +401,73 @@ sub display_status {
 }
 
 sub DISPLAY {
+    my $userid = $SESSION{'userid'};
+    my $tst_id = $SESSION{'tst_id'};
+
     doc_begin();
     show_test_details();
     display_status();
 
-    show_links_to_each_question();
+    if ($SESSION{'can_take'} == 0 ) {
+        my $row_href = get_schedule($DBH, $userid, $tst_id);
+        my %ROW = %{$row_href};
+        print qq{
+            <h2> The test can only be taken between $ROW{'sch_from'} and $ROW{'sch_to'}. </h2>
+        };
+    } else {
 
-    print qq{
-        <form action="taketest.pl?sid=$SESSION{'sid'}" method="POST">
-        <div>
-    };
+        show_links_to_each_question();
 
+        print qq{
+            <form action="taketest.pl?sid=$SESSION{'sid'}" method="POST">
+                <div>
+        };
 
-    show_mcq();
+        show_mcq();
 
-    print qq{
-        </div>
-        <input type="hidden" name="sid" value="$SESSION{'sid'}" />
-            <input type="hidden" name="cur_seq" value="$FORM{'cur_seq'}" />
-            <input type="hidden" name="tst_id" value="$FORM{'tst_id'}" />
-    };
+        print qq{
+            </div>
+                <input type="hidden" name="sid" value="$SESSION{'sid'}" />
+                <input type="hidden" name="cur_seq" value="$FORM{'cur_seq'}" />
+                <input type="hidden" name="tst_id" value="$FORM{'tst_id'}" />
+        };
 
-    my $answer_disable = "";
+        my $answer_disable = "";
 
-    if ($SESSION{'test_submitted'} == 1) {
-        $answer_disable = "disabled";
+        if ($SESSION{'test_submitted'} == 1) {
+            $answer_disable = "disabled";
+        }
+
+        my $next_disable = "";
+
+        if ($FORM{'cur_seq'} >= $SESSION{'tst_qst_count'}) {
+            $next_disable = "disabled";
+        }
+
+        my $prev_disable = "";
+
+        if ($FORM{'cur_seq'} <= 1) {
+            $prev_disable = "disabled";
+        }
+
+        print qq{
+            <div class="submit-container">
+                <div>
+                <input type="submit" name="prev" value="Previous Question" $prev_disable />
+                </div>
+                <div>
+                <input type="submit" name="answer" value="Submit Answer" $answer_disable />
+                </div>
+                <div>
+                <input type="submit" name="next" value="Next Question" $next_disable />
+                </div>
+                </div>
+        };
+
+        print q{
+            </form>};
+
     }
-
-    my $next_disable = "";
-
-    if ($FORM{'cur_seq'} >= $SESSION{'tst_qst_count'}) {
-        $next_disable = "disabled";
-    }
-
-    my $prev_disable = "";
-
-    if ($FORM{'cur_seq'} <= 1) {
-        $prev_disable = "disabled";
-    }
-
-    print qq{
-<div class="submit-container">
-    <div>
-        <input type="submit" name="prev" value="Previous Question" $prev_disable />
-    </div>
-    <div>
-        <input type="submit" name="answer" value="Submit Answer" $answer_disable />
-    </div>
-    <div>
-        <input type="submit" name="next" value="Next Question" $next_disable />
-    </div>
-</div>
-};
-
-    print q{
-        </form>};
-
-    # print_hash(\%SESSION);
-    # print_hash(\%FORM);
     doc_end();
 }
 

@@ -54,18 +54,23 @@ sub COLLECT {
 
 sub show_test_details {
     my $sid = $SESSION{'sid'};
+    my $tst_id = $FORM{'tst_id'};
+
     my $disable = "";
     my $query = q{
-        SELECT tst_id, tst_qst_count, tst_type, tst_title, tst_owner, tst_created_on, b.tstate_nick AS tst_state_nick, a.tst_state
-            FROM ry_tests a, ry_test_states b
+        SELECT *
+            FROM ry_tests a, ry_test_states b, ry_test_types c
             WHERE a.tst_state = b.tstate_id
+            AND a.tst_type = c.tst_type_id
             AND tst_id = ?
     };
     my $stmt = $DBH->prepare($query) or die $DBH->errstr();
-    $stmt->execute($FORM{'tst_id'}) or die $DBH->errstr();
-    my ($tst_id, $tst_qst_count, $tst_type, $tst_title, $tst_owner, $tst_created_on, $tst_state_nick, $tst_state) = $stmt->fetchrow();
+    $stmt->execute($tst_id) or die $DBH->errstr();
 
-    if ($tst_state == 2) {
+    my $row_href = $stmt->fetchrow_hashref();
+    my %ROW = %{$row_href};
+
+    if ($ROW{'tst_state'} == 2) {
         $disable = "disabled";
     }
 
@@ -82,9 +87,9 @@ sub show_test_details {
     };
 
     print qq{
-        <td> $tst_id </td> <td> $tst_qst_count </td> <td> $tst_type </td>
-            <td> $tst_title </td> <td> $tst_owner </td> <td> $tst_created_on </td>
-            <td> $tst_state_nick </td>
+        <td> $ROW{'tst_id'} </td> <td> $ROW{'tst_qst_count'} </td> <td> $ROW{'tst_type_nick'} </td>
+            <td> $ROW{'tst_title'} </td> <td> $ROW{'tst_owner'} </td> <td> $ROW{'tst_created_on'} </td>
+            <td> $ROW{'tstate_nick'} </td>
             <td>
             <form action="maketest.pl?sid=$sid" method="post">
             <input type="hidden" name="sid" value="$sid" />
@@ -251,6 +256,9 @@ sub show_qst_navigation {
 }
 
 sub PROCESS {
+    my $userid = $SESSION{'userid'};
+    my $tst_id = $FORM{'tst_id'};
+
     if ($ENV{'REQUEST_METHOD'} eq "POST") {
         if (defined $FORM{'make_test_active'}) {
             make_test_active($DBH, $FORM{'tst_id'});
@@ -258,6 +266,10 @@ sub PROCESS {
             add_question_to_test($DBH, $FORM{'tst_id'}, $FORM{'qid'});
         } elsif (defined $FORM{'remove_from_test'}) {
             remove_question_from_test($DBH, $FORM{'tst_id'}, $FORM{'qid'});
+        } elsif (defined $FORM{'add_tag_to_tst'}) {
+            insert_test2tag($DBH, $userid, $tst_id, $FORM{'tag_id'});
+        } elsif (defined $FORM{'remove_tag_from_tst'}) {
+            remove_test2tag($DBH, $tst_id, $FORM{'tag_id'});
         }
     }
 
@@ -314,9 +326,100 @@ sub DISPLAY {
     if ($ROW{'tst_state'} == 1) {
         show_questions();
     }
+
+    print qq{
+        <div style="display: grid; grid-template-columns: auto auto;" >
+    };
+
+    show_tst_tags();
+    show_all_tags();
+
+    print qq{
+        </div>
+    };
     
     print "</body>";
     print "</html>";
+}
+
+sub show_all_tags {
+    my $query = "SELECT * FROM ry_tags ORDER BY tg_tag";
+    my $stmt = $DBH->prepare($query) or die $DBH->errstr();
+    $stmt->execute() or die $DBH->errstr();
+
+    print qq{
+        <div>
+            <h3> Available Tags </h3>
+            <ul id="menu">
+    };
+
+    while (my $row_href = $stmt->fetchrow_hashref()) {
+        my %ROW = %{$row_href};
+        print qq{<li>};
+        show_add_tag_button_form($ROW{'tg_tagid'},  $ROW{'tg_tag'});
+        print qq{ </li> };
+    }
+
+    print qq{</ul> </div>};
+};
+
+sub show_tst_tags {
+    my $query = "SELECT * FROM ry_test2tag a, ry_tags b WHERE a.t2t_tagid = b.tg_tagid AND a.t2t_tid = ? ORDER BY b.tg_tagid";
+    my $stmt = $DBH->prepare($query) or die $DBH->errstr();
+    $stmt->execute($FORM{'tst_id'}) or die $DBH->errstr();
+
+    print qq{
+        <div>
+            <h3> Added Tags </h3>
+            <ul id="menu">
+    };
+
+    while (my $row_href = $stmt->fetchrow_hashref()) {
+        my %ROW = %{$row_href};
+        print qq{<li>};
+        show_remove_tag_button_form($ROW{'tg_tagid'},  $ROW{'tg_tag'});
+        print qq{ </li> };
+    }
+
+    print qq{</ul> </div>};
+};
+
+sub show_remove_tag_button_form {
+    my $tag_id = shift;
+    my $tag = shift;
+
+    my $sid = $SESSION{'sid'};
+    my $userid = $SESSION{'userid'};
+    my $tst_id = $FORM{'tst_id'};
+
+    print qq{
+        <form action="maketest.pl?sid=$sid" method="post">
+            <input type="hidden" name="sid" value="$sid" />
+            <input type="hidden" name="userid" value="$userid" />
+            <input type="hidden" name="tst_id" value="$tst_id" />
+            <input type="hidden" name="tag_id" value="$tag_id" />
+            <input type="submit" name="remove_tag_from_tst" value="$tag"/>
+            </form>
+    };
+}
+
+sub show_add_tag_button_form {
+    my $tag_id = shift;
+    my $tag = shift;
+
+    my $sid = $SESSION{'sid'};
+    my $userid = $SESSION{'userid'};
+    my $tst_id = $FORM{'tst_id'};
+
+    print qq{
+        <form action="maketest.pl?sid=$sid" method="post">
+            <input type="hidden" name="sid" value="$sid" />
+            <input type="hidden" name="userid" value="$userid" />
+            <input type="hidden" name="tst_id" value="$tst_id" />
+            <input type="hidden" name="tag_id" value="$tag_id" />
+            <input type="submit" name="add_tag_to_tst" value="$tag"/>
+            </form>
+    };
 }
 
 sub MAIN {

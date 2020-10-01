@@ -143,13 +143,17 @@ sub update_question {
     my %FORM = %{$form_href};
 
     my $qid = $FORM{'qid'};
+    my $qhtml = $FORM{'qhtml'};
+    my $qlatex = $FORM{'question'};
 
-    my $query = "UPDATE question SET qhtml = ?, qlatex = ?, qtype = ?, qsrc_ref = ?, qlast_updated = CURRENT_TIMESTAMP WHERE qid = ?";
+    if (defined $FORM{'same_latex_html'}) {
+        $qhtml = $qlatex;
+    }
+
+    my $query = "UPDATE question SET qhtml = ?, qlatex = ?, qsrc_ref = ?, qlast_updated = CURRENT_TIMESTAMP WHERE qid = ?";
 
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
-    $stmt->execute($FORM{'qhtml'},
-		   $FORM{'question'},
-		   $FORM{'qtype'},
+    $stmt->execute($qhtml, $qlatex,
 		   $FORM{'qsrc_ref'},
 		   $qid) or die $dbh->errstr();
     $stmt->finish();
@@ -775,6 +779,34 @@ sub check_acl {
     
 #     return $max_attempt;
 # }
+
+sub can_take_test {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+
+    my $query = q{SELECT COUNT(*) FROM ry_test_schedule WHERE sch_userid = ? AND sch_tst_id = ? AND CURRENT_TIMESTAMP BETWEEN sch_from AND sch_to};
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id) or die $dbh->errstr();
+    my ($count) = $stmt->fetchrow();
+    $stmt->finish();
+
+    return $count;
+}
+
+sub get_schedule {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+
+    my $query = q{SELECT * FROM ry_test_schedule WHERE sch_userid = ? AND sch_tst_id = ?};
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($userid, $tst_id) or die $dbh->errstr();
+    my $row_href = $stmt->fetchrow_hashref() or die $dbh->errstr();
+    $stmt->finish();
+
+    return $row_href;
+}
 
 sub insert_test_schedule {
     my $dbh = shift;
@@ -1471,6 +1503,36 @@ sub modify_user_given_string {
 
 # -------------------------------------------------------------------------
 # END - TABLE: ry_given_string
+# -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# BEGIN - TABLE: ry_test2tag
+# -------------------------------------------------------------------------
+
+sub insert_test2tag {
+    my $dbh = shift;
+    my $userid = shift;
+    my $tst_id = shift;
+    my $tagid = shift;
+
+    my $query = "INSERT INTO ry_test2tag (t2t_tid, t2t_tagid, t2t_userid) VALUES (?, ?, ?)";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tst_id, $tagid, $userid) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub remove_test2tag {
+    my $dbh = shift;
+    my $tst_id = shift;
+    my $tagid = shift;
+
+    my $query = "DELETE FROM ry_test2tag WHERE t2t_tid = ? AND t2t_tagid = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tst_id, $tagid) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+# -------------------------------------------------------------------------
+# END - TABLE: ry_test2tag
 # -------------------------------------------------------------------------
 
 1;

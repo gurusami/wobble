@@ -71,7 +71,9 @@ sub html_select_qtype {
     my $dbh = shift;
     my $given_qtype = shift;
 
-    my $html = q{<select name="qtype">};
+    my $html = q{
+        <select name="qtype" disabled>
+    };
 
     my $query = "SELECT qst_type_id, qst_type_name FROM ry_qst_types ORDER BY qst_type_id";
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
@@ -104,13 +106,15 @@ sub display_question {
     my %ROW = %{$row_href};
 
     my $checked = "";
-    my $qtype;
 
-    if (defined $ROW{'qtype'}) {
-        $qtype = $ROW{'qtype'};
-    } else {
-        $qtype = "";
-    }
+    # Removing support for different question types.  The only qtype is now 4.
+    my $qtype = 4;
+
+    # if (defined $ROW{'qtype'}) {
+        # $qtype = $ROW{'qtype'};
+    # } else {
+        # $qtype = "";
+    # }
 
     if (! defined $ROW{'qparent'}) {
         $ROW{'qparent'} = "";
@@ -121,6 +125,12 @@ sub display_question {
     my $html_tags = html_show_tags($dbh, $ROW{'qid'});
     my $html_qtype = html_select_qtype($dbh, $ROW{'qtype'});
     my $html_qst = HTML::Entities::encode($ROW{'qhtml'});
+
+    my $checked = "";
+
+    if ($ROW{'qlatex'} eq $html_qst) {
+        $checked = "checked";
+    }
 
     print qq{
 <div class="question">
@@ -141,6 +151,11 @@ sub display_question {
             <tr>
             <td> Parent Question Identifier </td>
             <td> <input type="number" name="qparent" value="$ROW{qparent}" readonly/> </td>
+            </tr>
+
+            <tr>
+                <td> Same for HTML and LaTeX </td>
+                <td> <input type="checkbox" name="same_latex_html" $checked/> </td>
             </tr>
 
             <tr>
@@ -296,11 +311,13 @@ sub display_answer_2 {
             $checked = "";
         }
 
+        my $html_choice = HTML::Entities::encode($row{'choice_html'});
+
         print qq{
             <tr>
                 <td> <input type="radio" name="choice_radio" value="$choice_id" $checked/> </td>
                 <td> <input type="text" size="40" name="$choice_name" value="$row{'choice_latex'}" /> </td>
-                <td> <input type="text" size="40" name="$choice_name_html" value="$row{'choice_html'}" /> </td>
+                <td> <input type="text" size="40" name="$choice_name_html" value="$html_choice" /> </td>
                 </tr>
         };
 
