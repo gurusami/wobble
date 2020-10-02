@@ -80,6 +80,7 @@ sub html_monitor_user {
 
 sub show_all_users()
 {
+    my $sid = $SESSION{'sid'};
     my $query = "SELECT * FROM ry_users ORDER BY userid";
     my $stmt = $DBH->prepare($query) or die $DBH->errstr();
     $stmt->execute() or die $DBH->errstr();
@@ -92,6 +93,7 @@ sub show_all_users()
                 <th> User Name </th>
                 <th> Created </th>
                 <th> Monitor </th>
+                <th> Edit </th>
             </tr>
     };
 
@@ -106,6 +108,7 @@ sub show_all_users()
                 <td> $ROW{'username'} </td>
                 <td> $ROW{'ur_created'} </td>
                 <td> $monitor </td>
+                <td> <a href="user-edit.pl?sid=$sid&target_user=$ROW{'userid'}">Edit</a> </td>
             </tr>
         };
     }

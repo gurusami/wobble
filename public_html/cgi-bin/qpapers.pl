@@ -84,7 +84,7 @@ sub show_ready_qpapers {
     my $stmt = $DBH->prepare($query) or die $DBH->errstr();
     $stmt->execute() or die $DBH->errstr();
 
-    while (my ($row_href) = $stmt->fetchrow_hashref()) {
+    while (my $row_href = $stmt->fetchrow_hashref()) {
         my %ROW = %{$row_href};
 
         print qq{

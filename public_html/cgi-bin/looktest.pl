@@ -134,6 +134,8 @@ sub show_test_details {
     my $row_href = $stmt->fetchrow_hashref();
     my %ROW = %{$row_href};
 
+    my $all_tags = get_tags_for_test($DBH, $tst_id);
+
     print qq{
         <div>
             <h2 align="center"> Test Information </h2>
@@ -141,6 +143,7 @@ sub show_test_details {
             <tr>
                 <th> Test ID </th> <th> Question Count </th> <th> Type </th> <th> Title </th> <th> Owner </th> <th> Created On </th>
                 <th> State </th>
+                <th> Tags </th>
             </tr>
 
             <tr>
@@ -151,12 +154,15 @@ sub show_test_details {
                 <td> $ROW{'username'} </td>
                 <td> $ROW{'tst_created_on'} </td>
                 <td> $ROW{'tstate_nick'} </td>
+                <td> $all_tags </td>
     };
     print q{</tr>};
     print q{
         </table>
             </div>
     };
+
+    $stmt->finish();
 }
 
 

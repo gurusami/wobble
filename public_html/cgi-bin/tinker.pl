@@ -117,7 +117,7 @@ sub show_all_tags {
 
     print qq{<ul id="menu">};
 
-    while (my ($row_href) = $stmt->fetchrow_hashref()) {
+    while (my $row_href = $stmt->fetchrow_hashref()) {
         my %ROW = %{$row_href};
         print qq{<li>};
         show_add_tag_button_form($ROW{'tg_tagid'},  $ROW{'tg_tag'});

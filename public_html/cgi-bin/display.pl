@@ -72,7 +72,7 @@ sub html_select_qtype {
     my $given_qtype = shift;
 
     my $html = q{
-        <select name="qtype" disabled>
+        <select name="qtype">
     };
 
     my $query = "SELECT qst_type_id, qst_type_name FROM ry_qst_types ORDER BY qst_type_id";
@@ -267,11 +267,11 @@ sub display_answer_string {
 
     print qq{
 <div>
-    <h2> Answer (String) </h2>
+    <h2> Solution </h2>
         <form action="tinker.pl?sid=$sid" method="post">
             <input type="hidden" name="qid" value="$qid" />
             <input type="hidden" name="sid" value="$sid" />
-            <textarea rows="5" cols="80" name="qans">$answer</textarea>
+            <textarea rows="20" cols="80" name="qans">$answer</textarea>
             <input type="submit" name="UpdateAnswerString" value="Update Answer" />
         </form>
 </div>

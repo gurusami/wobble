@@ -145,15 +145,16 @@ sub update_question {
     my $qid = $FORM{'qid'};
     my $qhtml = $FORM{'qhtml'};
     my $qlatex = $FORM{'question'};
+    my $qtype = $FORM{'qtype'};
 
     if (defined $FORM{'same_latex_html'}) {
         $qhtml = $qlatex;
     }
 
-    my $query = "UPDATE question SET qhtml = ?, qlatex = ?, qsrc_ref = ?, qlast_updated = CURRENT_TIMESTAMP WHERE qid = ?";
+    my $query = "UPDATE question SET qhtml = ?, qtype = ?, qlatex = ?, qsrc_ref = ?, qlast_updated = CURRENT_TIMESTAMP WHERE qid = ?";
 
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
-    $stmt->execute($qhtml, $qlatex,
+    $stmt->execute($qhtml, $qtype, $qlatex,
 		   $FORM{'qsrc_ref'},
 		   $qid) or die $dbh->errstr();
     $stmt->finish();
@@ -1533,6 +1534,61 @@ sub remove_test2tag {
 
 # -------------------------------------------------------------------------
 # END - TABLE: ry_test2tag
+# -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# BEGIN - TABLE: ry_user2tag
+# -------------------------------------------------------------------------
+
+sub insert_user2tag {
+    my $dbh = shift;
+    my $target_user = shift;
+    my $tagid = shift;
+    my $by_user = shift;
+
+    my $query = "INSERT INTO ry_user2tag (u2t_userid, u2t_tagid, u2t_by_userid) VALUES (?, ?, ?)";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($target_user, $tagid, $by_user) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub remove_user2tag {
+    my $dbh = shift;
+    my $target_user = shift;
+    my $tagid = shift;
+
+    my $query = "DELETE FROM ry_user2tag WHERE u2t_userid = ? AND u2t_tagid = ?";
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($target_user, $tagid) or die $dbh->errstr();
+    $stmt->finish();
+}
+
+sub get_tags_for_test {
+    my $dbh = shift;
+    my $tst_id = shift;
+    my @tags;
+
+    my $query = q{
+        SELECT *
+            FROM ry_test2tag a, ry_tags b
+            WHERE a.t2t_tagid = b.tg_tagid
+            AND a.t2t_tid = ?
+    };
+
+    my $stmt = $dbh->prepare($query) or die $dbh->errstr();
+    $stmt->execute($tst_id) or die $dbh->errstr();
+
+    while (my $row_href = $stmt->fetchrow_hashref()) {
+        my %ROW = %{$row_href};
+        push @tags, $ROW{'tg_tag'};
+    }
+
+    $stmt->finish();
+
+    return join(', ', @tags);
+}
+
+# -------------------------------------------------------------------------
+# END - TABLE: ry_user2tag
 # -------------------------------------------------------------------------
 
 1;

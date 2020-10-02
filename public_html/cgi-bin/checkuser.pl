@@ -135,11 +135,12 @@ sub list_tests_not_yet_taken {
         AND a.tst_state = d.tstate_id
         AND a.tst_state = 2
         AND a.tst_id NOT IN (SELECT sch_tst_id FROM ry_test_schedule WHERE sch_userid = ?)
+        AND a.tst_id IN (SELECT t2t_tid FROM ry_user2tag a, ry_test2tag b WHERE a.u2t_tagid = b.t2t_tagid AND a.u2t_userid = ?)
         ORDER BY a.tst_id;
     };
 
     my $stmt = $DBH->prepare($query) or die $DBH->errstr();
-    $stmt->execute($SESSION{'userid'}, $FORM{'target_user'}) or die $DBH->errstr();
+    $stmt->execute($SESSION{'userid'}, $FORM{'target_user'}, $FORM{'target_user'}) or die $DBH->errstr();
 
     print qq{
         <div>
