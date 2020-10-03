@@ -170,7 +170,7 @@ sub list_tests_not_yet_taken {
                     <form action="test-schedule.pl?sid=$sid" method="post">
                         <input type="hidden" name="sid" value="$sid" />
                         <input type="hidden" name="selected_tst_id" value="$ROW{'tst_id'}" />
-                        <input type="hidden" name="selected_username" value="$ROW{'username'}" />
+                        <input type="hidden" name="selected_username" value="$FORM{'target_user'}" />
                         <input type="submit" name="schedule" value="Schedule" />
                     </form>
                 </td>

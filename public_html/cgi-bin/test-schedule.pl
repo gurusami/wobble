@@ -164,9 +164,11 @@ sub DISPLAY {
         print qq{<input type="hidden" name="userid" value="$SESSION{'userid'}" />};
         print qq{<input type="hidden" name="from_date" value="$FORM{'from_date'}" />};
         print qq{<input type="hidden" name="from_time" value="$FORM{'from_time'}" />};
-        print qq{<input type="hidden" name="to_date" value="$FORM{'to_date'}" />} .
-        print qq{<input type="hidden" name="to_time" value="$FORM{'to_time'}" />} .
-            q{<input type="submit" name="confirm" value="Confirm" />};
+        print qq{<input type="hidden" name="to_date" value="$FORM{'to_date'}" />};
+        print qq{
+            <input type="hidden" name="to_time" value="$FORM{'to_time'}" />
+            <input type="submit" name="confirm" value="Confirm" />
+        };
     } else {
         print q{<h2> Test Schedule Completed </h2>} . "\n"
             . q{<table>} . "\n"
