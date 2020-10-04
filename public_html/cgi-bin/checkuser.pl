@@ -64,6 +64,7 @@ sub local_css()
 }
 
 sub list_all_reports {
+    my $sid = $SESSION{'sid'};
 
     my $query = q{
         SELECT *
@@ -93,6 +94,7 @@ sub list_all_reports {
                 <th> Skip </th>
                 <th> Created </th>
                 <th> Percentage </th>
+                <th> Review </th>
             </tr>
     };
 
@@ -113,6 +115,14 @@ sub list_all_reports {
                 <td> $ROW{'rpt_q_skip'} </td>
                 <td> $ROW{'rpt_created'} </td>
                 <td> $pc </td>
+                <td>
+                    <form action="test-review.pl?sid=$sid" method="post">
+                       <input type="hidden" name="sid" value="$sid" />
+                       <input type="hidden" name="tst_id" value="$ROW{'tst_id'}" />
+                       <input type="hidden" name="taker" value="$ROW{'userid'}" />
+                       <input type="submit" name="Review" value="Review" />
+                    </form>
+                </td>
             </tr>
         };
     }

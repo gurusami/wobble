@@ -265,13 +265,17 @@ sub display_answer_string {
         $answer = "";
     }
 
+    my $ans = HTML::Entities::encode($answer);
+
     print qq{
 <div>
     <h2> Solution </h2>
+        <p> $answer </p>
+
         <form action="tinker.pl?sid=$sid" method="post">
             <input type="hidden" name="qid" value="$qid" />
             <input type="hidden" name="sid" value="$sid" />
-            <textarea rows="20" cols="80" name="qans">$answer</textarea>
+            <textarea rows="20" cols="80" name="qans">$ans</textarea>
             <input type="submit" name="UpdateAnswerString" value="Update Answer" />
         </form>
 </div>

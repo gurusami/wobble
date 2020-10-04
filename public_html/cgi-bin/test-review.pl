@@ -27,6 +27,7 @@
 
 use strict;
 use warnings;
+use HTML::Entities ();
 
 require './profile.pl';
 require './utility.pl';
@@ -46,6 +47,59 @@ sub DTOR {
 sub COLLECT {
     my $form_href = collect_data();
     %FORM = %{$form_href};
+}
+
+sub show_links_to_each_question {
+    my $sid = $SESSION{'sid'};
+    my $N = $SESSION{'tst_qst_count'};
+    my $tst_id = $FORM{'tst_id'};
+    my $userid = $SESSION{'userid'};
+    my $taker = $FORM{'taker'};
+
+    print qq{
+        <div style="text-align: center;" >
+            <ul style="list-style: none; display: inline; ">
+                <li style="list-style: none; display: inline; "> Direct Question Links: </li>
+    };
+
+    my $query = qq{
+        SELECT *
+        FROM ry_test_attempts a, ry_test_questions b
+        WHERE a.att_tst_id = b.tq_tst_id
+        AND a.att_userid = ?
+        AND a.att_tst_id = ?
+        AND b.tq_tst_id = ?
+        AND a.att_qid = b.tq_qid
+        ORDER BY b.tq_qid_seq
+    };
+
+    my $stmt = $DBH->prepare($query) or die $DBH->errstr();
+    $stmt->execute($taker, $tst_id, $tst_id) or die $DBH->errstr();
+
+    while (my $row_href = $stmt->fetchrow_hashref()) {
+        my %ROW = %{$row_href};
+        my $result = $ROW{'att_result'};
+        my $bg = "";
+        my $i = $ROW{'tq_qid_seq'};
+
+        if ($result == 1) {
+            $bg = "background-color: Green; color: white";
+        } elsif ($result == 2) {
+            $bg = "background-color: Red; color: white";
+        } else {
+            $bg = "background-color: Yellow; color: white";
+        }
+
+        print qq{
+                <li style="list-style: none; display: inline; $bg; margin-left: 10px; padding-left: 10px; padding-right: 10px;">
+                        <a style="$bg;" href="test-review.pl?sid=$sid&tst_id=$tst_id&cur_seq=$i&taker=$taker">$i</a> </li>
+        };
+    }
+
+    print qq{
+            </ul>
+        </div>
+    };
 }
 
 sub PROCESS {
@@ -109,13 +163,16 @@ sub show_numberbox_for_answer {
         $given = "";
     }
 
+    # my $ans = HTML::Entities::encode($correct);
+
     print qq{
     <input type="number" size="80" name="give_answer_number" value="$given" readonly/>
 
     <h2> Correct Answer </h2>
 
-    <textarea rows="5" cols=80" readonly>$correct</textarea>
 };
+    # $correct
+    # <textarea rows="5" cols=80" readonly>$correct</textarea>
 }
 
 sub show_textbox_for_answer()
@@ -133,18 +190,16 @@ sub show_textbox_for_answer()
         $given = "";
     }
 
+    # my $ans = HTML::Entities::encode($correct);
+
     print qq{
     <input type="text" size="80" name="give_answer_string" value="$given" readonly/>
-
-    <h3> Correct Answer </h3>
-
-    <textarea rows="5" cols="80" readonly>$correct</textarea>
 };
 }
 
 sub show_choices_mcq_unique {
     my $qid = $SESSION{'qid'};
-    my $userid = $SESSION{'userid'};
+    my $userid = $SESSION{'taker'};
     my $tst_id = $SESSION{'tst_id'};
 
     my $correct = get_correct_answer_2($DBH, $qid);
@@ -166,7 +221,8 @@ sub show_choices_mcq_unique {
         }
 
         if ($correct == 1) {
-            $border = "1px solid";
+            # don't show the correct answer while review. 
+            $border = "none";
         } else {
             $border = "none";
         }
@@ -208,13 +264,14 @@ sub show_choices {
 }
 
 sub show_mcq {
+    my $sid = $SESSION{'sid'};
     my $qid_seq = $FORM{'cur_seq'};
     my $tst_id = $SESSION{'tst_id'};
     my $qid = $SESSION{'qid'};
     my $row_href = select_question($DBH, $qid);
     my %row = %{$row_href};
     
-    print qq{<h3> Question (QID: $qid) </h3>
+    print qq{<h3> Question (QID: <a href="tinker.pl?sid=$sid&qid=$qid">$qid</a>) </h3>
 		 <p> $row{'qhtml'} </p>};
 
     show_choices($row{'qtype'});
@@ -272,6 +329,8 @@ sub DISPLAY {
     print qq{
         <form action="test-review.pl?sid=$SESSION{'sid'}" method="POST">
     };
+
+    show_links_to_each_question();
 
     show_mcq();
 

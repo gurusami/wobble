@@ -1493,12 +1493,15 @@ sub modify_user_given_string {
     my $qid = shift;
     my $given = shift;
 
+    $dbh->begin_work();    
     my $exists = check_user_given_string($dbh, $userid, $tst_id, $qid);
     if ($exists == 0) {
         insert_user_given_string($dbh, $userid, $tst_id, $qid, $given);
     } else {
         update_user_given_string($dbh, $userid, $tst_id, $qid, $given);
     }
+    mark_gave($dbh, $userid, $tst_id, $qid);
+    $dbh->commit();    
 }
 
 

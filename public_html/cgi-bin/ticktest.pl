@@ -215,8 +215,9 @@ sub show_numberbox_for_answer {
 
     <h2> Correct Answer </h2>
 
-    <textarea rows="5" cols=80" readonly>$correct</textarea>
+    $correct
 };
+    # <textarea rows="5" cols=80" readonly>$correct</textarea>
 }
 
 sub show_textbox_for_answer()
@@ -237,10 +238,13 @@ sub show_textbox_for_answer()
     print qq{
     <textarea rows="10" cols="80" name="give_answer_string" readonly>$given</textarea>
 
+    <div>
     <h3> Correct Answer </h3>
 
-    <textarea rows="5" cols="80" readonly>$correct</textarea>
+    $correct
+    </div>
 };
+    # <textarea rows="5" cols="80" readonly>$correct</textarea>
 }
 
 sub show_choices_mcq_unique {
