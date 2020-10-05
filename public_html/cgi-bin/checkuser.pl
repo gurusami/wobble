@@ -161,8 +161,10 @@ sub list_tests_not_yet_taken {
                 <th> Test ID </th>
                 <th> Test Type </th>
                 <th> Test Title </th>
+                <th> Q. Count </th>
                 <th> State </th>
                 <th> Schedule </th>
+                <th> View </th>
             </tr>
     };
 
@@ -175,6 +177,7 @@ sub list_tests_not_yet_taken {
                 <td> $ROW{'tst_id'} </td>
                 <td> $ROW{'tst_type_nick'} </td>
                 <td> $ROW{'tst_title'} </td>
+                <td> $ROW{'tst_qst_count'} </td>
                 <td> $ROW{'tstate_nick'} </td>
                 <td> 
                     <form action="test-schedule.pl?sid=$sid" method="post">
@@ -182,6 +185,13 @@ sub list_tests_not_yet_taken {
                         <input type="hidden" name="selected_tst_id" value="$ROW{'tst_id'}" />
                         <input type="hidden" name="selected_username" value="$FORM{'target_user'}" />
                         <input type="submit" name="schedule" value="Schedule" />
+                    </form>
+                </td>
+                <td> 
+                    <form action="looktest.pl?sid=$sid" method="post">
+                        <input type="hidden" name="sid" value="$sid" />
+                        <input type="hidden" name="tst_id" value="$ROW{'tst_id'}" />
+                        <input type="submit" name="view" value="View" />
                     </form>
                 </td>
             </tr>
