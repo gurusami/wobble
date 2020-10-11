@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # Created: Mon 14 Sep 2020 10:39:48 PM IST
-# Last Modified: Tue 29 Sep 2020 12:01:56 PM IST
+# Last Modified: Sun 11 Oct 2020 11:26:25 AM IST
 # Time-stamp: <2020-09-10 06:27:50 annamalai>
 # Author: Annamalai Gurusami <annamalai.gurusami@gmail.com>
 # Created on 07-Sept-2020
@@ -314,13 +314,21 @@ sub html_select_refs {
     my $dbh = shift;
     my $name = shift;
     my $ref_id_selected = shift;
+    my $disable = shift;
     my $html;
+    my $readonly = "";
 
     my $query = "SELECT ref_id, ref_title FROM ry_biblio";
     my $stmt = $dbh->prepare($query) or die $dbh->errstr();
     $stmt->execute() or die $dbh->errstr();
 
-    $html = qq{<select name="$name">};
+    if (defined $disable && $disable == "1") {
+        $readonly = "readonly";
+    } else {
+        $readonly = "";
+    }
+
+    $html = qq{<select name="$name" $readonly>};
 
     if (! defined $ref_id_selected) {
         $html = $html . qq{<option value="0"> (empty) </option>};

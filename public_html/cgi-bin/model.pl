@@ -79,6 +79,18 @@ sub insert_question_withqid {
     $stmt->finish();
 };
 
+sub insert_question_with_srcref {
+    my $dbh = shift;
+    my $userid = shift;
+    my $ref_id = shift;
+
+    my $query = "INSERT INTO question (userid, qsrc_ref) VALUES (?, ?)";
+    my $stmt = $dbh->prepare($query);
+    $stmt->execute($userid, $ref_id);
+    $stmt->finish();
+
+    return last_insert_id($dbh);
+};
 
 sub insert_question_type1 {
     my $dbh = shift;

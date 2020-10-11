@@ -204,6 +204,66 @@ sub list_tests_not_yet_taken {
     };
 }
 
+sub list_tests_with_state {
+    my $exam_state = shift;
+    my $exam_state_name = shift;
+
+    my $query = q{
+        SELECT *
+        FROM ry_test_schedule a, ry_tests b, ry_users c, ry_test_types d, ry_exam_states e
+        WHERE a.sch_tst_id = b.tst_id
+        AND a.sch_userid = c.userid
+        AND b.tst_type = d.tst_type_id
+        AND a.sch_exam_state = e.exam_state_id
+        AND a.sch_tst_giver = ?
+        AND a.sch_userid = ?
+        AND a.sch_exam_state = ?
+        ORDER BY a.sch_exam_state;
+    };
+
+    my $stmt = $DBH->prepare($query) or die $DBH->errstr();
+    $stmt->execute($SESSION{'userid'}, $FORM{'target_user'}, $exam_state);
+
+    print qq{
+        <div>
+        <h3> List of Tests (State: $exam_state_name)</h3>
+        <table>
+            <tr>
+                <th> User Name </th>
+                <th> Test ID </th>
+                <th> Test Type </th>
+                <th> Test Title </th>
+                <th> QC </th>
+                <th> State </th>
+                <th> Schedule From </th>
+                <th> Schedule To </th>
+            </tr>
+    };
+
+    while (my $row_href = $stmt->fetchrow_hashref()) {
+        my %ROW = %{$row_href};
+
+        print qq{
+            <tr>
+                <td> $ROW{'username'} </td>
+                <td> $ROW{'tst_id'} </td>
+                <td> $ROW{'tst_type_nick'} </td>
+                <td> $ROW{'tst_title'} </td>
+                <td> $ROW{'tst_qst_count'} </td>
+                <td> $ROW{'exam_state_name'} </td>
+                <td> $ROW{'sch_from'} </td>
+                <td> $ROW{'sch_to'} </td>
+            </tr>
+        };
+    }
+
+    print qq{
+        </table>
+        </div>
+    };
+}
+
+
 sub list_all_tests {
 
     my $query = q{
@@ -258,6 +318,22 @@ sub list_all_tests {
     };
 }
 
+sub list_tests_foreach_examtype {
+
+    my $query = q{SELECT * FROM ry_exam_states ORDER BY exam_state_id};
+
+    my $stmt = $DBH->prepare($query) or die $DBH->errstr();
+    $stmt->execute() or die $DBH->errstr();
+
+    while (my $row_href = $stmt->fetchrow_hashref()) {
+        my %ROW = %{$row_href};
+
+        list_tests_with_state($ROW{'exam_state_id'}, $ROW{'exam_state_name'});
+    }
+
+    $stmt->finish();
+}
+
 sub DISPLAY {
     print "<html>";
     print "<head>";
@@ -270,7 +346,7 @@ sub DISPLAY {
     print "<body>";
     top_menu($DBH, $SESSION{'userid'}, $SESSION{'sid'});
 
-    list_all_tests();
+    list_tests_foreach_examtype();
     list_all_reports();
     list_tests_not_yet_taken();
 

@@ -194,6 +194,10 @@ sub DTOR {
     $DBH->disconnect();
 }
 
+sub insert_question_from_src {
+    my $ref_id = shift;
+    return insert_question_with_srcref($DBH, $SESSION{'userid'}, $ref_id);
+}
 
 sub PROCESS {
     my $form_href = \%FORM;
@@ -224,6 +228,8 @@ sub PROCESS {
             add_tag($DBH, $SESSION{'userid'}, $FORM{'qid'}, $FORM{'tag_id'});
         } elsif (defined $FORM{'UpdateAnswerString'}) {
             modify_answer_string($DBH, $FORM{'qid'}, $FORM{'qans'});
+        } elsif (defined $FORM{'add_question_from_src'}) {
+            $FORM{'qid'} = insert_question_from_src($FORM{'ref_id'});
         }
     }
 }

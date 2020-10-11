@@ -155,7 +155,7 @@ sub display_question {
 
             <tr>
                 <td> Same for HTML and LaTeX </td>
-                <td> <input type="checkbox" name="same_latex_html" $checked/> </td>
+                <td> <input type="checkbox" name="same_latex_html"/> </td>
             </tr>
 
             <tr>
@@ -321,7 +321,7 @@ sub display_answer_2 {
             <tr>
                 <td> <input type="radio" name="choice_radio" value="$choice_id" $checked/> </td>
                 <td> <input type="text" size="40" name="$choice_name" value="$row{'choice_latex'}" /> </td>
-                <td> <input type="text" size="40" name="$choice_name_html" value="$html_choice" /> </td>
+                <td> <textarea rows="5" cols="80" name="$choice_name_html">$html_choice</textarea> </td>
                 </tr>
         };
 
@@ -343,15 +343,15 @@ sub display_answer_2 {
     <table>
         <tr>
             <td> Same for HTML and LaTeX </td>
-            <td> <input type="checkbox" name="same_latex_html" checked="true" /> </td>
+            <td> <input type="checkbox" name="same_latex_html" /> </td>
         </tr>
         <tr>
             <td> Choice (LaTeX) </td>
-            <td> <input type="text" size="80" name="choice_latex" /> </td>
+            <td> <textarea rows="5" cols="80" name="choice_latex"></textarea>
         </tr>
         <tr>
             <td> Choice (HTML) </td>
-            <td> <input type="text" size="80" name="choice_html" /> </td>
+            <td> <textarea rows="5" cols="80" name="choice_html"></textarea>
         </tr>
         <tr>
             <td colspan="2">

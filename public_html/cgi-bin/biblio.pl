@@ -19,6 +19,7 @@ my $DBH;
 my $ref_id = 0;
 
 sub display_references {
+    my $sid = $FORM{'sid'};
     my $query = q{
         SELECT *
         FROM ry_biblio a, ry_ref_types b
@@ -62,6 +63,7 @@ sub display_references {
                 <td> $ROW{'ref_title'} </td>
                 <td> $ROW{'ref_isbn10'} </td>
                 <td> <a href="https://isbnsearch.org/isbn/$ROW{'ref_isbn13'}" target="_blank"> $ROW{'ref_isbn13'} </a></td>
+                <td> <a href="wo-biblio-questions.pl?sid=$sid&ref_id=$ROW{'ref_id'}">Questions</a> </td>
                 </tr>
         };
     }
