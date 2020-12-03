@@ -1,3 +1,4 @@
+The main purpose of the software is to help in preparing daily review tests.
 
 * The database schema to be used is available at $top_dir/schema/rydb-schema.sql
 
